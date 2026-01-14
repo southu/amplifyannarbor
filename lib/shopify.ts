@@ -1,11 +1,13 @@
 const SHOPIFY_STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN!;
-const SHOPIFY_STOREFRONT_ACCESS_TOKEN = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN!;
 
 interface ShopifyResponse<T> {
   data: T;
   errors?: Array<{ message: string }>;
 }
 
+// Using Shopify's tokenless Storefront API access
+// Supports: Products, Collections, Cart, Search, Pages/Blogs
+// See: https://shopify.dev/docs/api/storefront/latest
 async function shopifyFetch<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   const url = `https://${SHOPIFY_STORE_DOMAIN}/api/2026-01/graphql.json`;
   
@@ -13,7 +15,6 @@ async function shopifyFetch<T>(query: string, variables?: Record<string, unknown
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Shopify-Storefront-Access-Token": SHOPIFY_STOREFRONT_ACCESS_TOKEN,
     },
     body: JSON.stringify({ query, variables }),
   });
