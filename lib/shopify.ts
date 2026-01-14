@@ -7,7 +7,7 @@ interface ShopifyResponse<T> {
 }
 
 async function shopifyFetch<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-  const url = `https://${SHOPIFY_STORE_DOMAIN}/api/2024-01/graphql.json`;
+  const url = `https://${SHOPIFY_STORE_DOMAIN}/api/2026-01/graphql.json`;
   
   const response = await fetch(url, {
     method: "POST",
