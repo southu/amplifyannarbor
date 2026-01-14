@@ -117,6 +117,7 @@ npm run pages:build    # Cloudflare Pages build
 2. Added edge runtime to all dynamic routes
 3. Uploaded 59 event photos (compressed from 2.3GB to 37MB)
 4. Connected Shopify Storefront API for merch
+5. **Fixed Shopify API version** - Updated from expired `2024-01` to `2026-01`
 
 ---
 
@@ -137,6 +138,8 @@ npm run pages:build    # Cloudflare Pages build
 - Set up Supabase, Stripe, Shopify integrations
 - Uploaded 2025 event photos to gallery
 - Connected Printful/Shopify merch store
+- Fixed Shopify API version (2024-01 → 2026-01) - merch was showing "Coming Soon"
+- Created this handoff document
 
 *Add new session entries below:*
 
