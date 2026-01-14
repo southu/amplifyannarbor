@@ -5,16 +5,16 @@ import Image from "next/image";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { cn } from "@/lib/utils";
-import { Camera, Calendar, User } from "lucide-react";
+import { Camera, User } from "lucide-react";
 
 interface GalleryImage {
   id: string;
   image_url: string;
   caption: string | null;
   photographer: string | null;
-  event_id: string | null;
-  event_name?: string;
-  upload_date: string;
+  event_id?: string | null;
+  upload_date?: string;
+  created_at?: string;
 }
 
 interface GalleryEvent {
@@ -31,6 +31,7 @@ export function GalleryGrid({ images, events }: GalleryGridProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState("all");
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   const filteredImages =
     selectedEvent === "all"
@@ -46,6 +47,10 @@ export function GalleryGrid({ images, events }: GalleryGridProps) {
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
+  };
+
+  const handleImageError = (id: string) => {
+    setImageErrors(prev => new Set(prev).add(id));
   };
 
   return (
@@ -76,22 +81,24 @@ export function GalleryGrid({ images, events }: GalleryGridProps) {
           <div
             key={image.id}
             className="group relative aspect-square rounded-xl overflow-hidden bg-[var(--color-bg-card)] cursor-pointer animate-fade-in opacity-0"
-            style={{ animationDelay: `${index * 0.05}s` }}
+            style={{ animationDelay: `${Math.min(index * 0.03, 1)}s` }}
             onClick={() => openLightbox(index)}
           >
-            {/* Placeholder for when images are missing */}
-            <div className="absolute inset-0 flex items-center justify-center bg-[var(--color-bg-elevated)]">
-              <Camera className="w-12 h-12 text-[var(--color-text-muted)]" />
-            </div>
-
-            {/* Actual image would go here with Next/Image */}
-            {/* <Image
-              src={image.image_url}
-              alt={image.caption || "Gallery image"}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            /> */}
+            {/* Placeholder shown when image fails to load */}
+            {imageErrors.has(image.id) ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-[var(--color-bg-elevated)]">
+                <Camera className="w-12 h-12 text-[var(--color-text-muted)]" />
+              </div>
+            ) : (
+              <Image
+                src={image.image_url}
+                alt={image.caption || "Amplify Ann Arbor event photo"}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                onError={() => handleImageError(image.id)}
+              />
+            )}
 
             {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -102,12 +109,6 @@ export function GalleryGrid({ images, events }: GalleryGridProps) {
                   </p>
                 )}
                 <div className="flex items-center gap-4 text-xs text-white/70">
-                  {image.event_name && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {image.event_name}
-                    </span>
-                  )}
                   {image.photographer && (
                     <span className="flex items-center gap-1">
                       <User className="w-3 h-3" />
@@ -161,4 +162,3 @@ export function GalleryGrid({ images, events }: GalleryGridProps) {
     </>
   );
 }
-

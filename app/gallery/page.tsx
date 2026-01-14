@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
-import { Camera, Calendar } from "lucide-react";
+import { Camera } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export const metadata: Metadata = {
   title: "Gallery",
@@ -8,70 +9,31 @@ export const metadata: Metadata = {
     "Photo gallery from past Amplify Ann Arbor events. Relive the memories and see the community impact.",
 };
 
-// Sample gallery data - will be replaced with Supabase data
-const galleryImages = [
-  {
-    id: "1",
-    image_url: "/gallery/event-1.jpg",
-    caption: "N*D performing at the 2025 benefit concert",
-    photographer: "Local Photographer",
-    event_id: "1",
-    event_name: "Amplify Ann Arbor 2025",
-    upload_date: "2025-08-01",
-  },
-  {
-    id: "2",
-    image_url: "/gallery/event-2.jpg",
-    caption: "Crowd enjoying the show at The Blind Pig",
-    photographer: null,
-    event_id: "1",
-    event_name: "Amplify Ann Arbor 2025",
-    upload_date: "2025-08-01",
-  },
-  {
-    id: "3",
-    image_url: "/gallery/event-3.jpg",
-    caption: "Jimmy Was Busy opening set",
-    photographer: "Local Photographer",
-    event_id: "1",
-    event_name: "Amplify Ann Arbor 2025",
-    upload_date: "2025-08-01",
-  },
-  {
-    id: "4",
-    image_url: "/gallery/event-4.jpg",
-    caption: "Sponsors and organizers at the event",
-    photographer: null,
-    event_id: "1",
-    event_name: "Amplify Ann Arbor 2025",
-    upload_date: "2025-08-01",
-  },
-  {
-    id: "5",
-    image_url: "/gallery/event-5.jpg",
-    caption: "The venue packed with supporters",
-    photographer: "Local Photographer",
-    event_id: "1",
-    event_name: "Amplify Ann Arbor 2025",
-    upload_date: "2025-08-01",
-  },
-  {
-    id: "6",
-    image_url: "/gallery/event-6.jpg",
-    caption: "Donations being collected at the door",
-    photographer: null,
-    event_id: "1",
-    event_name: "Amplify Ann Arbor 2025",
-    upload_date: "2025-08-01",
-  },
-];
+// Revalidate every hour
+export const revalidate = 3600;
 
-const events = [
-  { id: "all", name: "All Events" },
-  { id: "1", name: "Amplify Ann Arbor 2025" },
-];
+async function getGalleryImages() {
+  const { data, error } = await supabase
+    .from("photo_gallery")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-export default function GalleryPage() {
+  if (error) {
+    console.error("Error fetching gallery:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export default async function GalleryPage() {
+  const galleryImages = await getGalleryImages();
+
+  const events = [
+    { id: "all", name: "All Events" },
+    { id: "2025", name: "Amplify Ann Arbor 2025" },
+  ];
+
   return (
     <>
       {/* Hero Section */}
@@ -95,14 +57,9 @@ export default function GalleryPage() {
           </div>
 
           {/* Gallery Grid with Lightbox */}
-          <GalleryGrid images={galleryImages} events={events} />
-        </div>
-      </section>
-
-      {/* Empty State for No Photos */}
-      {galleryImages.length === 0 && (
-        <section className="section pt-0">
-          <div className="container">
+          {galleryImages.length > 0 ? (
+            <GalleryGrid images={galleryImages} events={events} />
+          ) : (
             <div className="text-center py-20">
               <div className="w-20 h-20 rounded-full bg-[var(--color-bg-elevated)] flex items-center justify-center mx-auto mb-6">
                 <Camera className="w-10 h-10 text-[var(--color-text-muted)]" />
@@ -114,10 +71,9 @@ export default function GalleryPage() {
                 Check back after our next event to see photos from the concert!
               </p>
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
     </>
   );
 }
-
