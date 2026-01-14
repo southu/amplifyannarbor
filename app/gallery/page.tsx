@@ -9,8 +9,8 @@ export const metadata: Metadata = {
     "Photo gallery from past Amplify Ann Arbor events. Relive the memories and see the community impact.",
 };
 
-// Revalidate every hour
-export const revalidate = 3600;
+export const runtime = "edge";
+export const revalidate = 3600; // Revalidate every hour
 
 async function getGalleryImages() {
   const { data, error } = await supabase
