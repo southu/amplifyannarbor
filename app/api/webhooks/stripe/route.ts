@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import QRCode from "qrcode";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 
-// Lazy load stripe and supabase to avoid build errors
-async function getStripeServer() {
-  const stripe = await import("stripe");
-  return new stripe.default(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-12-15.clover",
-  });
-}
-
-async function getSupabaseServer() {
-  const { createClient } = await import("@supabase/supabase-js");
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+export const runtime = "edge";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -28,7 +15,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const stripe = await getStripeServer();
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2025-12-15.clover",
+  });
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   let event;
@@ -64,24 +53,17 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-async function handleSuccessfulPayment(session: {
-  id: string;
-  payment_intent: string | { id: string } | null;
-  amount_total: number | null;
-  metadata: {
-    donor_name?: string;
-    donor_email?: string;
-    message?: string;
-    type?: string;
-    event_id?: string;
-  } | null;
-}) {
-  const supabase = await getSupabaseServer();
+async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  
   const metadata = session.metadata || {};
 
   const paymentIntentId = typeof session.payment_intent === 'string' 
     ? session.payment_intent 
-    : session.payment_intent?.id || session.id;
+    : session.id;
 
   // Record the donation in Supabase
   const { data: donation, error: donationError } = await supabase
@@ -89,7 +71,7 @@ async function handleSuccessfulPayment(session: {
     .insert({
       donor_name: metadata.donor_name || "Anonymous",
       donor_email: metadata.donor_email || "",
-      amount: (session.amount_total || 0) / 100, // Convert from cents
+      amount: (session.amount_total || 0) / 100,
       stripe_payment_id: paymentIntentId,
       event_id: metadata.event_id || null,
       message: metadata.message || null,
@@ -106,35 +88,7 @@ async function handleSuccessfulPayment(session: {
 
   // If this is a ticket purchase, generate a ticket
   if (metadata.type === "ticket" && metadata.event_id) {
-    await generateTicket(supabase, donation, metadata);
-  }
-}
-
-async function generateTicket(
-  supabase: Awaited<ReturnType<typeof getSupabaseServer>>,
-  donation: { id: string; donor_name: string; donor_email: string },
-  metadata: { event_id?: string }
-) {
-  // Generate QR code data
-  const ticketData = {
-    ticketId: `TKT-${donation.id}`,
-    event: metadata.event_id,
-    donor: donation.donor_name,
-  };
-
-  try {
-    // Generate QR code as data URL
-    const qrCode = await QRCode.toDataURL(JSON.stringify(ticketData), {
-      width: 200,
-      margin: 2,
-      color: {
-        dark: "#000000",
-        light: "#ffffff",
-      },
-    });
-
-    // Create ticket record
-    const { data: ticket, error: ticketError } = await supabase
+    const { error: ticketError } = await supabase
       .from("tickets")
       .insert({
         event_id: metadata.event_id,
@@ -142,22 +96,13 @@ async function generateTicket(
         donor_email: donation.donor_email,
         quantity: 1,
         donation_id: donation.id,
-        qr_code: qrCode,
         checked_in: false,
-      })
-      .select()
-      .single();
+      });
 
     if (ticketError) {
       console.error("Error creating ticket:", ticketError);
-      return;
+    } else {
+      console.log("Ticket created for donation:", donation.id);
     }
-
-    console.log("Ticket generated:", ticket.id);
-
-    // TODO: Send email with ticket QR code using a service like SendGrid
-    // await sendTicketEmail(donation.donor_email, donation.donor_name, ticket, qrCode);
-  } catch (error) {
-    console.error("Error generating ticket:", error);
   }
 }

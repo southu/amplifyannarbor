@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Image optimization
+  // Image optimization - use unoptimized for Cloudflare Pages
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -13,12 +14,6 @@ const nextConfig: NextConfig = {
         hostname: "cdn.shopify.com",
       },
     ],
-    formats: ["image/avif", "image/webp"],
-  },
-
-  // Performance optimizations
-  experimental: {
-    optimizePackageImports: ["lucide-react"],
   },
 
   // Headers for security
