@@ -220,37 +220,49 @@ export async function getProductByHandle(handle: string) {
   return data.productByHandle;
 }
 
+// Using Cart API (works with tokenless access, replaces deprecated Checkout API)
 export async function createCheckout(lineItems: Array<{ variantId: string; quantity: number }>) {
   const query = `
-    mutation CreateCheckout($lineItems: [CheckoutLineItemInput!]!) {
-      checkoutCreate(input: { lineItems: $lineItems }) {
-        checkout {
+    mutation CartCreate($lines: [CartLineInput!]!) {
+      cartCreate(input: { lines: $lines }) {
+        cart {
           id
-          webUrl
+          checkoutUrl
         }
-        checkoutUserErrors {
+        userErrors {
+          field
           message
         }
       }
     }
   `;
 
-  interface CheckoutResponse {
-    checkoutCreate: {
-      checkout: {
+  // Transform lineItems to Cart API format
+  const lines = lineItems.map((item) => ({
+    merchandiseId: item.variantId,
+    quantity: item.quantity,
+  }));
+
+  interface CartResponse {
+    cartCreate: {
+      cart: {
         id: string;
-        webUrl: string;
+        checkoutUrl: string;
       } | null;
-      checkoutUserErrors: Array<{ message: string }>;
+      userErrors: Array<{ field: string[]; message: string }>;
     };
   }
 
-  const data = await shopifyFetch<CheckoutResponse>(query, { lineItems });
+  const data = await shopifyFetch<CartResponse>(query, { lines });
   
-  if (data.checkoutCreate.checkoutUserErrors.length > 0) {
-    throw new Error(data.checkoutCreate.checkoutUserErrors.map((e) => e.message).join(", "));
+  if (data.cartCreate.userErrors.length > 0) {
+    throw new Error(data.cartCreate.userErrors.map((e) => e.message).join(", "));
   }
 
-  return data.checkoutCreate.checkout;
+  // Return in same format as old checkout for compatibility
+  return data.cartCreate.cart ? {
+    id: data.cartCreate.cart.id,
+    webUrl: data.cartCreate.cart.checkoutUrl,
+  } : null;
 }
 
