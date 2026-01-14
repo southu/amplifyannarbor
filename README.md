@@ -1,36 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Amplify Ann Arbor Website
+
+A modern Next.js website for Amplify Ann Arbor, a charity concert benefiting Ann Arbor Meals on Wheels.
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Payments**: Stripe
+- **Commerce**: Shopify Storefront API (headless)
+- **Hosting**: Cloudflare Pages
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+- Stripe account
+- Shopify store (optional, for merch)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/amplifyannarbor.git
+   cd amplifyannarbor
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Copy the environment file and fill in your values:
+   ```bash
+   cp env.example .env.local
+   ```
+
+4. Set up the database:
+   - Create a new Supabase project
+   - Run the SQL in `supabase/schema.sql` in the SQL Editor
+   - Create storage buckets: `sponsor-logos`, `event-photos`, `blog-images`
+
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000)
+
+## Environment Variables
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Stripe
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Shopify (optional)
+SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
+SHOPIFY_STOREFRONT_ACCESS_TOKEN=your_token
+
+# Site
+NEXT_PUBLIC_SITE_URL=https://amplifyannarbor.com
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+├── app/                    # Next.js App Router pages
+│   ├── admin/             # Admin panel pages
+│   ├── api/               # API routes (Stripe webhook, etc.)
+│   ├── blog/              # Blog pages
+│   ├── donate/            # Donation flow
+│   ├── events/            # Events/lineup page
+│   ├── gallery/           # Photo gallery
+│   ├── merch/             # Merchandise store
+│   ├── sponsors/          # Sponsors page
+│   └── about/             # About page
+├── components/            # React components
+│   ├── admin/            # Admin-specific components
+│   ├── donate/           # Donation form components
+│   ├── gallery/          # Gallery components
+│   └── ui/               # Reusable UI components
+├── lib/                   # Utility functions and clients
+├── types/                 # TypeScript type definitions
+└── supabase/             # Database schema
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features
 
-## Learn More
+### Public Pages
+- **Home**: Hero section, mission info, featured performers
+- **Sponsors**: Title and supporting sponsors showcase
+- **Events/Lineup**: Event details, band information, Spotify embed
+- **Gallery**: Photo gallery with lightbox
+- **Blog**: News and updates with rich text content
+- **Merch**: Headless Shopify store integration
+- **Donate**: Stripe-powered donation flow
+- **About**: Mission, story, and contact form
 
-To learn more about Next.js, take a look at the following resources:
+### Admin Panel
+- Dashboard with stats overview
+- Blog post management with rich text editor
+- Photo gallery uploads
+- Sponsor management
+- Event management
+- Donation tracking and export
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Cloudflare Pages
 
-## Deploy on Vercel
+1. Connect your GitHub repository to Cloudflare Pages
+2. Set build command: `npm run build`
+3. Set output directory: `.next`
+4. Add all environment variables in the Cloudflare dashboard
+5. Deploy!
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Stripe Webhook
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set up a webhook endpoint in Stripe dashboard:
+- URL: `https://yourdomain.com/api/webhooks/stripe`
+- Events: `checkout.session.completed`, `payment_intent.payment_failed`
+
+## Development
+
+```bash
+# Run development server
+npm run dev
+
+# Run linting
+npm run lint
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+This project is private and proprietary to Amplify Ann Arbor.
+
+## Support
+
+For questions or issues, contact hello@amplifyannarbor.com
