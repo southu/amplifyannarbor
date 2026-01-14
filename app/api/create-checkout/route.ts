@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
 
 export const runtime = "edge";
 
@@ -22,40 +21,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: "2025-12-15.clover",
-    });
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      console.error("STRIPE_SECRET_KEY is not configured");
+      return NextResponse.json(
+        { error: "Payment system not configured" },
+        { status: 500 }
+      );
+    }
     
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://amplifyannarbor.com";
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Donation to Ann Arbor Meals on Wheels",
-              description: "via Amplify Ann Arbor",
-              images: [`${siteUrl}/logo.png`],
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents
-          },
-          quantity: 1,
-        },
-      ],
-      customer_email: email,
-      metadata: {
-        donor_name: name,
-        donor_email: email,
-        message: message || "",
-        type: "donation",
+    // Create Stripe Checkout Session using fetch (edge-compatible)
+    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${stripeSecretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      success_url: `${siteUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/donate`,
+      body: new URLSearchParams({
+        "mode": "payment",
+        "success_url": `${siteUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
+        "cancel_url": `${siteUrl}/donate`,
+        "customer_email": email,
+        "line_items[0][price_data][currency]": "usd",
+        "line_items[0][price_data][unit_amount]": String(Math.round(amount * 100)),
+        "line_items[0][price_data][product_data][name]": "Donation to Ann Arbor Meals on Wheels",
+        "line_items[0][price_data][product_data][description]": "via Amplify Ann Arbor",
+        "line_items[0][quantity]": "1",
+        "metadata[donor_name]": name,
+        "metadata[donor_email]": email,
+        "metadata[message]": message || "",
+        "metadata[type]": "donation",
+      }).toString(),
     });
+
+    const session = await response.json();
+
+    if (!response.ok) {
+      console.error("Stripe error:", session);
+      return NextResponse.json(
+        { error: session.error?.message || "Failed to create checkout session" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
