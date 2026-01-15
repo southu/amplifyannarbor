@@ -1,9 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
+import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/utils";
 import { BookOpen, Calendar, ArrowRight, User } from "lucide-react";
+
+export const runtime = "edge";
+export const revalidate = 60; // Revalidate every minute
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -11,59 +15,42 @@ export const metadata: Metadata = {
     "News, updates, and stories from Amplify Ann Arbor. Stay connected with our community initiatives.",
 };
 
-// Sample blog posts - will be replaced with Supabase data
-const blogPosts = [
-  {
-    id: "1",
-    title: "Announcing Amplify Ann Arbor 2026",
-    slug: "announcing-amplify-ann-arbor-2026",
-    excerpt:
-      "We're thrilled to announce that Amplify Ann Arbor is returning for another year of great music and community support. Mark your calendars for July 30th!",
-    content: "",
-    author: "Lexi Harper",
-    published_at: "2026-01-10",
-    featured_image: null,
-    status: "published",
-  },
-  {
-    id: "2",
-    title: "Thank You to Our 2025 Supporters",
-    slug: "thank-you-2025-supporters",
-    excerpt:
-      "A heartfelt thank you to everyone who made last year's event a success. Together, we raised over $10,000 for Ann Arbor Meals on Wheels.",
-    content: "",
-    author: "Jason Harper",
-    published_at: "2025-08-15",
-    featured_image: null,
-    status: "published",
-  },
-  {
-    id: "3",
-    title: "Meet Our Headliners: N*D",
-    slug: "meet-our-headliners-nd",
-    excerpt:
-      "Get to know the legendary Ann Arbor band making their epic reunion at this year's benefit concert. Their story is as inspiring as their music.",
-    content: "",
-    author: "Lexi Harper",
-    published_at: "2025-07-20",
-    featured_image: null,
-    status: "published",
-  },
-  {
-    id: "4",
-    title: "The Impact of Your Donations",
-    slug: "impact-of-your-donations",
-    excerpt:
-      "See how your contributions directly help Ann Arbor seniors receive nutritious meals and friendly visits. Every dollar makes a difference.",
-    content: "",
-    author: "Jason Harper",
-    published_at: "2025-06-10",
-    featured_image: null,
-    status: "published",
-  },
-];
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  excerpt: string | null;
+  author: string | null;
+  category: string | null;
+  featured_image: string | null;
+  published_at: string | null;
+  created_at: string;
+}
 
-export default function BlogPage() {
+async function getBlogPosts(): Promise<BlogPost[]> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("id, title, slug, description, excerpt, author, category, featured_image, published_at, created_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching blog posts:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export default async function BlogPage() {
+  const posts = await getBlogPosts();
+
   return (
     <>
       {/* Hero Section */}
@@ -87,56 +74,74 @@ export default function BlogPage() {
           </div>
 
           {/* Blog Posts Grid */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {blogPosts.map((post, index) => (
-              <Card
-                key={post.id}
-                className="group hover:shadow-[0_0_30px_rgba(233,69,96,0.15)] animate-fade-in opacity-0"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                {/* Featured Image Placeholder */}
-                <div className="h-48 bg-gradient-to-br from-[var(--color-bg-elevated)] to-[var(--color-accent)]/10 flex items-center justify-center rounded-t-xl">
-                  <BookOpen className="w-12 h-12 text-[var(--color-text-muted)]" />
-                </div>
-
-                <CardContent className="p-6">
-                  {/* Meta */}
-                  <div className="flex items-center gap-4 text-sm text-[var(--color-text-muted)] mb-3">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(post.published_at)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <User className="w-4 h-4" />
-                      {post.author}
-                    </span>
+          {posts.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+              {posts.map((post, index) => (
+                <Card
+                  key={post.id}
+                  className="group hover:shadow-[0_0_30px_rgba(233,69,96,0.15)] animate-fade-in opacity-0"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  {/* Featured Image */}
+                  <div className="h-48 bg-gradient-to-br from-[var(--color-bg-elevated)] to-[var(--color-accent)]/10 flex items-center justify-center rounded-t-xl overflow-hidden relative">
+                    {post.featured_image ? (
+                      <Image
+                        src={post.featured_image}
+                        alt={post.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                    ) : (
+                      <BookOpen className="w-12 h-12 text-[var(--color-text-muted)]" />
+                    )}
                   </div>
 
-                  {/* Title */}
-                  <h2 className="text-xl font-bold text-white mb-3 group-hover:text-[var(--color-accent)] transition-colors">
-                    <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                  </h2>
+                  <CardContent className="p-6">
+                    {/* Category Badge */}
+                    {post.category && (
+                      <span className="inline-block px-2 py-1 bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-xs font-medium rounded mb-3">
+                        {post.category}
+                      </span>
+                    )}
 
-                  {/* Excerpt */}
-                  <p className="text-[var(--color-text-secondary)] mb-4 line-clamp-3">
-                    {post.excerpt}
-                  </p>
+                    {/* Meta */}
+                    <div className="flex items-center gap-4 text-sm text-[var(--color-text-muted)] mb-3">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {formatDate(post.published_at || post.created_at)}
+                      </span>
+                      {post.author && (
+                        <span className="flex items-center gap-1">
+                          <User className="w-4 h-4" />
+                          {post.author}
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Read More */}
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="inline-flex items-center gap-2 text-[var(--color-accent)] font-medium hover:gap-3 transition-all"
-                  >
-                    Read More
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    {/* Title */}
+                    <h2 className="text-xl font-bold text-white mb-3 group-hover:text-[var(--color-accent)] transition-colors">
+                      <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                    </h2>
 
-          {/* Empty State */}
-          {blogPosts.length === 0 && (
+                    {/* Excerpt/Description */}
+                    <p className="text-[var(--color-text-secondary)] mb-4 line-clamp-3">
+                      {post.description || post.excerpt || ""}
+                    </p>
+
+                    {/* Read More */}
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className="inline-flex items-center gap-2 text-[var(--color-accent)] font-medium hover:gap-3 transition-all"
+                    >
+                      Read More
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-20">
               <div className="w-20 h-20 rounded-full bg-[var(--color-bg-elevated)] flex items-center justify-center mx-auto mb-6">
                 <BookOpen className="w-10 h-10 text-[var(--color-text-muted)]" />
@@ -155,4 +160,3 @@ export default function BlogPage() {
     </>
   );
 }
-
