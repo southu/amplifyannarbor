@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://amplifyannarbor.com";
+    // Get site URL from env, request headers, or use production URL as fallback
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+      `https://${request.headers.get("host")}` || 
+      "https://amplifyannarbor.com";
 
     // Create Stripe Checkout Session using fetch (edge-compatible)
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
