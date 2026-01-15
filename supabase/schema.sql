@@ -16,20 +16,32 @@ CREATE TABLE IF NOT EXISTS events (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Blog Posts Table
+-- Blog Posts Table (with AI-enhanced fields)
 CREATE TABLE IF NOT EXISTS blog_posts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
+  description TEXT, -- SEO meta description (150-160 chars)
   content TEXT NOT NULL,
   excerpt TEXT,
+  author TEXT DEFAULT 'Amplify Ann Arbor', -- Simple author name
   author_id UUID REFERENCES auth.users(id),
+  category TEXT DEFAULT 'News', -- Single category
+  tags TEXT[] DEFAULT '{}', -- Array of searchable tags
   published_at TIMESTAMP WITH TIME ZONE,
+  modified_at TIMESTAMP WITH TIME ZONE, -- Last modification
   featured_image TEXT,
   status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Migration for existing tables (run if table already exists)
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS description TEXT;
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS author TEXT DEFAULT 'Amplify Ann Arbor';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'News';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+-- ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS modified_at TIMESTAMPTZ;
 
 -- Sponsors Table
 CREATE TABLE IF NOT EXISTS sponsors (
