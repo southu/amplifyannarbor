@@ -47,12 +47,13 @@ Amplify Ann Arbor is a charity concert website supporting Ann Arbor Meals on Whe
 1. **Connect custom domain** - amplifyannarbor.com needs to be connected in Cloudflare Pages
 2. **Test Stripe webhooks** - Need to verify webhooks work in production
 3. **Add OpenAI API key** - Add `OPENAI_API_KEY` to Cloudflare Pages env vars for blog AI features
-4. **Run database migration** - Run the ALTER TABLE statements in Supabase to add new blog columns
-5. **Create blog-images storage bucket** - In Supabase Storage, create a public bucket called `blog-images`
-6. **Sponsors page** - Using placeholder data, needs real sponsor info
-7. **Events page** - Using placeholder data for 2026 event
-8. **Contact form** - Not yet implemented
-9. **Email notifications** - Ticket QR codes, donation receipts not set up
+4. **Add Perplexity API key** - Add `PERPLEXITY_API_KEY` to Cloudflare Pages for research features
+5. **Run database migration** - Run the ALTER TABLE statements in Supabase to add new blog columns
+6. **Create blog-images storage bucket** - In Supabase Storage, create a public bucket called `blog-images`
+7. **Sponsors page** - Using placeholder data, needs real sponsor info
+8. **Events page** - Using placeholder data for 2026 event
+9. **Contact form** - Not yet implemented
+10. **Email notifications** - Ticket QR codes, donation receipts not set up
 
 ---
 
@@ -69,6 +70,7 @@ STRIPE_WEBHOOK_SECRET=
 SHOPIFY_STORE_DOMAIN=
 NEXT_PUBLIC_SITE_URL=https://amplifyannarbor.com
 OPENAI_API_KEY=  # For blog AI features (GPT-5.2)
+PERPLEXITY_API_KEY=  # For research features
 ```
 
 Note: `SHOPIFY_STOREFRONT_ACCESS_TOKEN` is no longer needed - using tokenless API access.
@@ -159,8 +161,12 @@ npm run pages:build    # Cloudflare Pages build
   - Rich text editor with HTML/Preview toggle
   - Full article editor with 4 tabs
   - **Image upload** - drag & drop or click to upload to Supabase Storage
+  - **Perplexity Research** - Research tab with real-time info and citations
+    - Deep research, find sources, local (Ann Arbor), trending angles, fact-check
+    - GPT enhances research prompts for better results
+    - Copy sources as markdown links
 - Updated database schema for new blog columns
-- **Needs**: Add OPENAI_API_KEY to Cloudflare, run DB migration, create blog-images bucket
+- **Needs**: Add OPENAI_API_KEY + PERPLEXITY_API_KEY to Cloudflare, run DB migration, create blog-images bucket
 
 ### Session 3 - [DATE] ([DEVICE])
 - [What was worked on]

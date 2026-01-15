@@ -15,6 +15,7 @@ import { AIEnhanceButton } from "@/components/admin/AIEnhanceButton";
 import { AIArticleGenerator } from "@/components/admin/AIArticleGenerator";
 import { SEOAnalyzer } from "@/components/admin/SEOAnalyzer";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { ResearchPanel } from "@/components/admin/ResearchPanel";
 import {
   ArrowLeft,
   Sparkles,
@@ -25,6 +26,7 @@ import {
   Send,
   X,
   Plus,
+  Globe,
 } from "lucide-react";
 
 interface BlogPost {
@@ -56,7 +58,7 @@ const DEFAULT_POST: BlogPost = {
   published_at: null,
 };
 
-type TabType = "generate" | "edit" | "preview" | "seo";
+type TabType = "generate" | "research" | "edit" | "preview" | "seo";
 
 export default function ArticleEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -223,10 +225,17 @@ export default function ArticleEditorPage({ params }: { params: Promise<{ id: st
 
   const tabs: { id: TabType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     ...(isNew ? [{ id: "generate" as TabType, label: "AI Generate", icon: Sparkles }] : []),
+    { id: "research", label: "Research", icon: Globe },
     { id: "edit", label: "Edit", icon: FileText },
     { id: "preview", label: "Preview", icon: Eye },
     { id: "seo", label: "SEO Analysis", icon: BarChart3 },
   ];
+
+  const handleInsertResearch = (content: string) => {
+    const formattedContent = `\n\n<h3>Research Notes</h3>\n<p>${content.replace(/\n/g, "</p>\n<p>")}</p>`;
+    setPost((prev) => ({ ...prev, content: prev.content + formattedContent }));
+    setActiveTab("edit");
+  };
 
   if (isLoading) {
     return (
@@ -304,6 +313,26 @@ export default function ArticleEditorPage({ params }: { params: Promise<{ id: st
         {/* AI Generate Tab */}
         {activeTab === "generate" && (
           <AIArticleGenerator onGenerated={handleGeneratedArticle} />
+        )}
+
+        {/* Research Tab */}
+        {activeTab === "research" && (
+          <Card className="max-w-4xl mx-auto p-6">
+            <CardContent className="p-0">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[var(--color-accent)]" />
+                Research with Perplexity AI
+              </h2>
+              <p className="text-[var(--color-text-secondary)] mb-6">
+                Use Perplexity AI to research topics, find sources, and get real-time information with citations.
+                ChatGPT can help enhance your research prompts for better results.
+              </p>
+              <ResearchPanel
+                onInsertContent={handleInsertResearch}
+                articleContext={{ title: post.title, content: post.content }}
+              />
+            </CardContent>
+          </Card>
         )}
 
         {/* Edit Tab */}

@@ -4,12 +4,12 @@ export const runtime = "edge";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-type EnhanceType = "generate" | "title" | "description" | "content" | "seo";
+type EnhanceType = "generate" | "title" | "description" | "content" | "seo" | "custom";
 
 interface EnhanceRequest {
   type: EnhanceType;
   value: string;
-  context?: {
+  context?: string | {
     title?: string;
     description?: string;
     content?: string;
@@ -86,6 +86,8 @@ Analyze the provided content and return a JSON object with:
 }
 
 Return ONLY valid JSON, no markdown code blocks.`,
+
+  custom: "", // Placeholder - actual prompt comes from context
 };
 
 async function callOpenAI(
@@ -130,35 +132,47 @@ export async function POST(request: NextRequest) {
     const body: EnhanceRequest = await request.json();
     const { type, value, context } = body;
 
-    if (!type || !SYSTEM_PROMPTS[type]) {
+    if (!type || (type !== "custom" && !SYSTEM_PROMPTS[type])) {
       return NextResponse.json(
         { error: "Invalid enhancement type" },
         { status: 400 }
       );
     }
 
-    if (!value || value.trim().length < 10) {
+    if (!value || value.trim().length < 3) {
       return NextResponse.json(
         { error: "Content too short" },
         { status: 400 }
       );
     }
 
+    // Handle custom prompts (context is the system prompt)
+    if (type === "custom") {
+      if (!context || typeof context !== "string") {
+        return NextResponse.json(
+          { error: "Custom type requires context as system prompt" },
+          { status: 400 }
+        );
+      }
+      const result = await callOpenAI(context, value);
+      return NextResponse.json({ result: result.trim() });
+    }
+
     let userContent = value;
 
     // Add context for certain enhancement types
-    if (type === "description" && context) {
+    if (type === "description" && context && typeof context === "object") {
       userContent = `Title: ${context.title || "Untitled"}
 Content Preview: ${context.content?.substring(0, 500) || ""}
 
 Generate a meta description for this article.`;
-    } else if (type === "content" && context) {
+    } else if (type === "content" && context && typeof context === "object") {
       userContent = `Title: ${context.title || "Untitled"}
 Description: ${context.description || ""}
 
 Content to improve:
 ${value}`;
-    } else if (type === "seo" && context) {
+    } else if (type === "seo" && context && typeof context === "object") {
       userContent = `Title: ${context.title || ""}
 Description: ${context.description || ""}
 Content: ${context.content || value}
