@@ -6,7 +6,7 @@
 
 ## Last Updated
 **Date**: January 14, 2026  
-**Session**: Desktop (Jason's main computer)
+**Session**: Desktop (Jason's main computer) - Session 2
 
 ---
 
@@ -36,8 +36,9 @@ Amplify Ann Arbor is a charity concert website supporting Ann Arbor Meals on Whe
 3. **Cloudflare Pages Deployment** - Working with edge runtime
 4. **Supabase Integration** - Database schema created, storage configured
 5. **Photo Gallery** - 59 photos from 2025 event uploaded to Supabase Storage with SEO-optimized filenames
-6. **Shopify/Printful Merch Store** - Connected to Shopify Storefront API, 4 products synced from Printful
-7. **Stripe Donations** - Checkout flow ready (needs webhook testing in production)
+6. **Shopify/Printful Merch Store** - Connected via tokenless Storefront API, 4 products synced
+7. **Stripe Donations** - Checkout flow working with fetch-based API (edge-compatible)
+8. **Blog Admin CMS** - Full admin with AI-powered content generation using GPT-5.2
 
 ### 🔄 In Progress
 - None currently
@@ -45,8 +46,8 @@ Amplify Ann Arbor is a charity concert website supporting Ann Arbor Meals on Whe
 ### 📋 TODO / Not Yet Done
 1. **Connect custom domain** - amplifyannarbor.com needs to be connected in Cloudflare Pages
 2. **Test Stripe webhooks** - Need to verify webhooks work in production
-3. **Admin authentication** - Login page exists but auth flow not fully implemented
-4. **Blog content** - Using placeholder content, needs real posts
+3. **Add OpenAI API key** - Add `OPENAI_API_KEY` to Cloudflare Pages env vars for blog AI features
+4. **Run database migration** - Run the ALTER TABLE statements in Supabase to add new blog columns
 5. **Sponsors page** - Using placeholder data, needs real sponsor info
 6. **Events page** - Using placeholder data for 2026 event
 7. **Contact form** - Not yet implemented
@@ -65,9 +66,11 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 SHOPIFY_STORE_DOMAIN=
-SHOPIFY_STOREFRONT_ACCESS_TOKEN=
 NEXT_PUBLIC_SITE_URL=https://amplifyannarbor.com
+OPENAI_API_KEY=  # For blog AI features (GPT-5.2)
 ```
+
+Note: `SHOPIFY_STOREFRONT_ACCESS_TOKEN` is no longer needed - using tokenless API access.
 
 These are also set in Cloudflare Pages environment variables.
 
@@ -143,7 +146,21 @@ npm run pages:build    # Cloudflare Pages build
 
 *Add new session entries below:*
 
-### Session 2 - [DATE] ([DEVICE])
+### Session 2 - Jan 14, 2026 (Desktop)
+- Fixed Shopify merch page - switched to tokenless Storefront API (products were returning empty)
+- Fixed Stripe donations - switched to fetch-based API for edge runtime compatibility
+- Fixed checkout URL issue - added request host header fallback
+- Built complete Blog Admin CMS with AI features:
+  - GPT-5.2 integration for article generation and enhancement
+  - AI Article Generator (raw content → complete article)
+  - AI Enhance buttons for title, description, content
+  - SEO Analyzer with basic checks and AI analysis
+  - Rich text editor with HTML/Preview toggle
+  - Full article editor with 4 tabs
+- Updated database schema for new blog columns
+- **Needs**: Add OPENAI_API_KEY to Cloudflare, run DB migration
+
+### Session 3 - [DATE] ([DEVICE])
 - [What was worked on]
 - [What was completed]
 - [Any issues encountered]
