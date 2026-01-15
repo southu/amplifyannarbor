@@ -12,6 +12,7 @@ import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { AIEnhanceButton } from "@/components/admin/AIEnhanceButton";
 import { AIArticleGenerator } from "@/components/admin/AIArticleGenerator";
 import { SEOAnalyzer } from "@/components/admin/SEOAnalyzer";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
   ArrowLeft,
   Sparkles,
@@ -441,24 +442,12 @@ export default function NewArticlePage() {
               {/* Featured Image */}
               <Card className="p-6">
                 <CardContent className="p-0">
-                  <label className="block text-sm font-medium text-white mb-2">Featured Image URL</label>
-                  <input
-                    type="text"
+                  <label className="block text-sm font-medium text-white mb-2">Featured Image</label>
+                  <ImageUpload
                     value={post.featured_image}
-                    onChange={(e) => setPost((prev) => ({ ...prev, featured_image: e.target.value }))}
-                    placeholder="https://..."
-                    className="w-full bg-[var(--color-bg-elevated)] border border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none"
+                    onChange={(url) => setPost((prev) => ({ ...prev, featured_image: url }))}
+                    folder="posts"
                   />
-                  {post.featured_image && (
-                    <div className="mt-3 aspect-video rounded-lg overflow-hidden bg-[var(--color-bg-elevated)]">
-                      <img
-                        src={post.featured_image}
-                        alt="Featured"
-                        className="w-full h-full object-cover"
-                        onError={(e) => (e.currentTarget.style.display = "none")}
-                      />
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </div>

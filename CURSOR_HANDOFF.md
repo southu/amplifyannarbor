@@ -48,10 +48,11 @@ Amplify Ann Arbor is a charity concert website supporting Ann Arbor Meals on Whe
 2. **Test Stripe webhooks** - Need to verify webhooks work in production
 3. **Add OpenAI API key** - Add `OPENAI_API_KEY` to Cloudflare Pages env vars for blog AI features
 4. **Run database migration** - Run the ALTER TABLE statements in Supabase to add new blog columns
-5. **Sponsors page** - Using placeholder data, needs real sponsor info
-6. **Events page** - Using placeholder data for 2026 event
-7. **Contact form** - Not yet implemented
-8. **Email notifications** - Ticket QR codes, donation receipts not set up
+5. **Create blog-images storage bucket** - In Supabase Storage, create a public bucket called `blog-images`
+6. **Sponsors page** - Using placeholder data, needs real sponsor info
+7. **Events page** - Using placeholder data for 2026 event
+8. **Contact form** - Not yet implemented
+9. **Email notifications** - Ticket QR codes, donation receipts not set up
 
 ---
 
@@ -157,8 +158,9 @@ npm run pages:build    # Cloudflare Pages build
   - SEO Analyzer with basic checks and AI analysis
   - Rich text editor with HTML/Preview toggle
   - Full article editor with 4 tabs
+  - **Image upload** - drag & drop or click to upload to Supabase Storage
 - Updated database schema for new blog columns
-- **Needs**: Add OPENAI_API_KEY to Cloudflare, run DB migration
+- **Needs**: Add OPENAI_API_KEY to Cloudflare, run DB migration, create blog-images bucket
 
 ### Session 3 - [DATE] ([DEVICE])
 - [What was worked on]
