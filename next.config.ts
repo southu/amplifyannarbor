@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Stamp the deploying commit SHA at build time so /version can report it.
+  // CF_PAGES_COMMIT_SHA is injected by Cloudflare Pages builds; "local" otherwise.
+  env: {
+    COMMIT_SHA: process.env.CF_PAGES_COMMIT_SHA ?? "local",
+  },
+
   // Image optimization - use unoptimized for Cloudflare Pages
   images: {
     unoptimized: true,
