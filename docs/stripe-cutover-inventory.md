@@ -129,4 +129,25 @@ These are real Stripe surfaces that do not match any of the nine grep strings bu
 
 ---
 
+## 7. Verification log
+
+Grep counts in this document were re-verified against the repo on **2026-07-21** (scope: entire repo excluding `node_modules`, `.git`, `.next`, `package-lock.json`, and this doc):
+
+| Pattern | Re-verified hits | Matches §1 table |
+|---|---|---|
+| `pk_test` | 1 (`README.md:62`) | ✅ |
+| `pk_live` | 0 | ✅ none found |
+| `sk_test` | 1 (`README.md:63`) | ✅ |
+| `buy.stripe.com` | 0 | ✅ none found |
+| `checkout.stripe.com` | 0 | ✅ none found |
+| `price_` | 4 (all `create-checkout/route.ts:50-53`, `price_data` field keys) | ✅ |
+| `prod_` | 0 | ✅ none found |
+| `whsec_` | 1 (`README.md:64`, redacted) | ✅ |
+| `STRIPE_` (case-sensitive) | 12 | ✅ |
+| `stripe_payment_id` (case-insensitive `STRIPE_` extra) | 3 (`schema.sql:76`, `webhooks/stripe/route.ts:75`, `types/index.ts:57`) | ✅ |
+
+All referenced source files (`lib/stripe.ts`, `app/api/create-checkout/route.ts`, `app/api/webhooks/stripe/route.ts`, `components/donate/DonationForm.tsx`) confirmed present at the cited paths. No live-mode string (`pk_live` / `buy.stripe.com` / `checkout.stripe.com` / `prod_`) exists anywhere in the repo.
+
+---
+
 *End of inventory. This document is the only change introduced by this step; no donation behavior was modified.*
