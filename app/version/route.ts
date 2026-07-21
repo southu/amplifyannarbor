@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 /**
  * Plain-text deploy fingerprint for control-plane deploy gates.
  * Cloudflare Pages sets CF_PAGES_COMMIT_SHA at build time; we expose it
