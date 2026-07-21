@@ -22,7 +22,7 @@ Search scope: entire repo (source, config, content, `public/` assets, scripts, S
 | `price_` | 4 | Stripe API `price_data` form field keys (dynamic pricing, not a Stripe Price ID) |
 | `prod_` | 0 | **none found** |
 | `whsec_` | 1 | Redacted placeholder in README env template |
-| `STRIPE_` | 12 | Env-var references in code + config templates |
+| `STRIPE_` | 15 | 12 uppercase env-var references (case-sensitive `STRIPE_`) + 3 case-insensitive matches of the `stripe_payment_id` DB column (not a Stripe key/env var) |
 
 ---
 
@@ -48,6 +48,11 @@ Every Stripe reference in the repo, with matched pattern, surface type, and test
 | 14 | `app/api/create-checkout/route.ts:53` | `price_` | code | `"line_items[0][price_data][product_data][description]": ...` | n/a | Inline product description; `price_data` field key |
 | 15 | `app/api/webhooks/stripe/route.ts:18` | `STRIPE_` | code | `new Stripe(process.env.STRIPE_SECRET_KEY!, ...)` | **unknown** | Instantiates Stripe SDK from env secret; mode follows deployed env value |
 | 16 | `app/api/webhooks/stripe/route.ts:21` | `STRIPE_` | code | `process.env.STRIPE_WEBHOOK_SECRET!` (redacted) | **unknown** | Reads webhook signing secret from env |
+| 17 | `supabase/schema.sql:76` | `STRIPE_` (case-insensitive) | config (SQL schema) | `stripe_payment_id TEXT UNIQUE` | n/a | `donations` table column that stores the Stripe payment/session id — **not** a Stripe key or env var; only matches a case-insensitive `STRIPE_` grep |
+| 18 | `app/api/webhooks/stripe/route.ts:75` | `STRIPE_` (case-insensitive) | code | `stripe_payment_id: paymentIntentId` | n/a | Writes the payment id into the `donations` row — DB column name, not a Stripe key/env var |
+| 19 | `types/index.ts:57` | `STRIPE_` (case-insensitive) | code | `stripe_payment_id: string;` | n/a | TypeScript type for the `donations.stripe_payment_id` column — DB field, not a Stripe key/env var |
+
+> **Case sensitivity note:** rows 17–19 only appear under a **case-insensitive** grep for `STRIPE_`; a case-sensitive `STRIPE_` grep (the intended env-var pattern) yields the 12 uppercase references (rows 1–10, 15, 16). The three lowercase `stripe_payment_id` hits are a database column, carry no key material, and require no action at cutover.
 
 ### Additional Stripe touchpoints not captured by the nine literal patterns
 
