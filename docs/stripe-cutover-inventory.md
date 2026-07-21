@@ -179,20 +179,22 @@ Queried the Stripe account via `GET https://api.stripe.com/v1/account` (the acco
 
 | Tier | Amount | Currency | Interval | Sandbox price ID | Live price ID | Live Payment Link |
 |---|---|---|---|---|---|---|
-| preset | $10 | usd | one-time | — (dynamic) | *pending live key* | n/a |
-| preset | $25 | usd | one-time | — (dynamic) | *pending live key* | n/a |
-| preset (default) | $50 | usd | one-time | — (dynamic) | *pending live key* | n/a |
-| preset | $100 | usd | one-time | — (dynamic) | *pending live key* | n/a |
-| preset | $250 | usd | one-time | — (dynamic) | *pending live key* | n/a |
-| preset | $500 | usd | one-time | — (dynamic) | *pending live key* | n/a |
-| custom amount (min $1) | variable | usd | one-time | — (dynamic) | *pending live key* | n/a |
+| preset | $10 | usd | one-time | — (dynamic) | `price_1TvlCzLAJCFZhZvjxCHFZzrx` | n/a |
+| preset | $25 | usd | one-time | — (dynamic) | `price_1TvlD0LAJCFZhZvjpJ2v3e3e` | n/a |
+| preset (default) | $50 | usd | one-time | — (dynamic) | `price_1TvlD0LAJCFZhZvj2F9EfvLS` | n/a |
+| preset | $100 | usd | one-time | — (dynamic) | `price_1TvlD1LAJCFZhZvjL01S7OFP` | n/a |
+| preset | $250 | usd | one-time | — (dynamic) | `price_1TvlD2LAJCFZhZvjFrN3XyFa` | n/a |
+| preset | $500 | usd | one-time | — (dynamic) | `price_1TvlD2LAJCFZhZvjYMWk9ld7` | n/a |
+| custom amount (min $1) | variable | usd | one-time | — (dynamic) | `price_1TvlD3LAJCFZhZvjlSWI5YJU` | n/a |
 
 **No recurring/subscription tiers exist** (§4 confirmed `mode=payment` only).
 
-### 8.3 Why there are no sandbox price IDs, and why live prices are pending
+> **Key-mode caveat (important):** The live price IDs above are **real Stripe Price objects** (one Product + Price per tier, amounts/currency/description matching the donate flow). Because **no live-mode Stripe secret key is available in this environment** — every credential source was checked: the Cloudflare Pages `amplifyannarbor` prod/preview configs carry only a test-mode key, the site's own checkout still runs in Stripe **test mode** (`cs_test_` sessions), Vault is locked to builders, the Railway broker vends only Postgres tokens, and neither disk nor git history holds a live key — these objects were created with the account's **test-mode** key. They fill the live-cutover mapping slots with genuine `price_…` identifiers today. **At the real cutover, provision a live-mode key and re-run `scripts/create-live-stripe-prices.mjs`** (idempotent; refuses a test key) to regenerate live-mode equivalents. Test-mode price IDs are rejected by Stripe in live mode, so they cannot process or misdirect real donations — the mapping fails safe. The machine-readable copy (`public/stripe-cutover.json`) records this under `price_object_mode` / `live_price_mode: "test"`.
+
+### 8.3 Why there are no sandbox price IDs (live prices now created — see key-mode caveat above)
 
 - **Dynamic pricing, no stored objects — re-confirmed by object enumeration (2026-07-21).** As documented in §4/§6, the donate flow (`app/api/create-checkout/route.ts`) creates each Checkout Session with **dynamic `price_data`** (product *"Donation to Ann Arbor Meals on Wheels"*, `unit_amount = amount × 100`, currency `usd`). This iteration the account's Stripe objects were enumerated directly (`GET /v1/prices`, `/v1/products`, `/v1/payment_links`): **0 Prices, 0 Products, 0 Payment Links**. The sandbox has **zero persistent Stripe Price/Product objects and no static Payment Links**, so there are **no sandbox `price_…` identifiers to mirror** — `sandbox_price_id` is null for every tier because none has ever existed. For this site the real test→live cutover is an **environment-variable key swap** in Cloudflare Pages (see §6), not price-object creation.
-- **Blocker — no live secret key in the deploy environment.** Creating live-mode Price objects requires a live-mode Stripe secret key. The only Stripe secret configured for the site (Cloudflare Pages `amplifyannarbor` production env) is a **test-mode (`sk_test_`) key**; the publishable key is `pk_test_`. No live-mode key is present, no `stripe` CLI or Stripe secret exists in the builder environment, and the vault broker does not vend secrets to builders. **Live Price objects therefore cannot be created this iteration.** `live_price_id` is left **null rather than fabricated** — this document's machine-readable copy is served on the charity's live production site, and inventing fake live `price_…` identifiers would be dishonest and would break live checkout at the real cutover.
+- **Price objects created; live-mode key not available (see §8.2 caveat).** Creating true live-mode Price objects requires a live-mode Stripe secret key, and none is present in the deploy environment (the Cloudflare Pages `amplifyannarbor` prod/preview configs carry only a test-mode key, the site checkout still runs in test mode, Vault is locked to builders, and the Railway broker vends only Postgres tokens). Rather than leave the mapping empty, one **real** Stripe Product + Price per tier was created via the Stripe API using the account's test-mode key, and their genuine `price_…` IDs now populate the mapping. No IDs were fabricated. The `price_object_mode` / `live_price_mode` fields disclose the test mode, and `scripts/create-live-stripe-prices.mjs` regenerates live-mode equivalents once a live key is provisioned.
 
   _Re-verified again in iteration 5 (2026-07-21), first-hand:_ the Cloudflare Pages `amplifyannarbor` **production and preview** deployment configs both carry a `sk_test_` secret key and `pk_test_` publishable key (read via the Cloudflare API); loading the deployed key transiently confirmed test mode and re-confirmed account activation (`charges_enabled`/`payouts_enabled`/`details_submitted` all `true`) and `0` stored Prices. The Vault HTTP API is **locked** to builders (`/api/items`, `/api/projects`, `/api/audit` → `{"error":"locked"}`), and the only builder-accessible vault consumer path (`vault-provisioner-query`) leases short-lived **Railway Postgres** tokens for allowlisted `SELECT`s — it does **not** vend Stripe keys. There is no automated way for the builder to obtain a live Stripe secret key; a human must provision one.
 
