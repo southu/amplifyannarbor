@@ -148,6 +148,8 @@ Grep counts in this document were re-verified against the repo on **2026-07-21**
 
 All referenced source files (`lib/stripe.ts`, `app/api/create-checkout/route.ts`, `app/api/webhooks/stripe/route.ts`, `components/donate/DonationForm.tsx`) confirmed present at the cited paths. No live-mode string (`pk_live` / `buy.stripe.com` / `checkout.stripe.com` / `prod_`) exists anywhere in the repo.
 
+**Independent re-verification pass (2026-07-21):** every pattern was grepped a second time against the current working tree (excluding `node_modules`, `.git`, `.next`, `package-lock.json`, and this doc). Results were identical to the table above — 1× `pk_test`, 0× `pk_live`, 1× `sk_test`, 0× `buy.stripe.com`, 0× `checkout.stripe.com`, 4× `price_` (all `price_data` field keys), 0× `prod_`, 1× `whsec_`, 12× case-sensitive `STRIPE_`, and 3× case-insensitive `stripe_payment_id`. No discrepancies found; no new Stripe surfaces introduced.
+
 ---
 
 *End of inventory. This document is the only change introduced by this step; no donation behavior was modified.*
