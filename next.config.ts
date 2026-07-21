@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Expose Cloudflare Pages commit SHA to the runtime /version route.
+  env: {
+    NEXT_PUBLIC_CF_PAGES_COMMIT_SHA:
+      process.env.CF_PAGES_COMMIT_SHA ||
+      process.env.NEXT_PUBLIC_CF_PAGES_COMMIT_SHA ||
+      "",
+  },
   // Image optimization - use unoptimized for Cloudflare Pages
   images: {
     unoptimized: true,
