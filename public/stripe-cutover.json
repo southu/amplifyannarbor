@@ -14,26 +14,36 @@
     "details_submitted": true,
     "verified_via": "Stripe API GET /v1/account",
     "verified_on": "2026-07-21",
-    "note": "The Stripe account object is shared across test and live mode; charges_enabled/payouts_enabled/details_submitted reflect the account's real live-activation state. The live Stripe account is fully activated and can accept live charges and receive payouts."
+    "reverified_on": "2026-07-21",
+    "note": "The Stripe account object is shared across test and live mode; charges_enabled/payouts_enabled/details_submitted reflect the account's real live-activation state. The live Stripe account is fully activated and can accept live charges and receive payouts. Re-verified this iteration by calling GET /v1/account with the deployed key."
   },
   "sandbox_pricing_model": "dynamic_price_data",
   "uses_payment_links": false,
+  "sandbox_objects_enumerated": {
+    "checked_on": "2026-07-21",
+    "method": "Stripe API GET /v1/prices, /v1/products, /v1/payment_links (test mode)",
+    "prices": 0,
+    "products": 0,
+    "payment_links": 0,
+    "note": "Confirms the donate flow stores NO Stripe Price/Product objects and uses NO static Payment Links. There are therefore no sandbox price_ identifiers to mirror; sandbox_price_id is null for every tier because none has ever existed (not because it was unread)."
+  },
   "status": "live_prices_pending_live_key",
   "blocker": {
     "code": "no_live_secret_key_in_environment",
-    "summary": "Live-mode Stripe price/product objects cannot be created this step because no live-mode secret key is present in the deploy environment. Only a test-mode secret key is configured in Cloudflare Pages. The live account itself is fully activated (see activation).",
-    "resolution": "Add the live-mode Stripe keys (live publishable + secret, and a live webhook signing secret) to the Cloudflare Pages 'amplifyannarbor' production environment secret store, then create one live Price per tier (or keep dynamic pricing) and populate live_price_id below.",
-    "checked": [
-      "Cloudflare Pages amplifyannarbor env (production + preview): the deployed Stripe secret key is a test-mode key; no live-mode key is present",
-      "No stripe CLI installed and no Stripe secret in the builder environment",
-      "Vault broker exposes no Stripe credential",
-      "No Stripe variables in any Railway project"
+    "summary": "Live-mode Stripe Price/Product objects cannot be created this step because no live-mode Stripe secret key is present in the builder or deploy environment. The only Stripe secret configured for the site is a test-mode key. The live account itself is fully activated (see activation). Live price_ IDs were left null rather than fabricated: this file is served on the charity's live production site, and inventing fake live identifiers would be dishonest and would break live checkout at the real cutover.",
+    "resolution": "Add the live-mode Stripe keys (live publishable key, live secret key, and a live webhook signing secret) to the Cloudflare Pages 'amplifyannarbor' production environment secret store (or make a live secret key reachable to the builder). Then create one live Price per tier (or keep the recommended dynamic-pricing flow, which needs no price objects) and populate live_price_id below.",
+    "checked_this_iteration": [
+      "Cloudflare Pages 'amplifyannarbor' production env: the configured Stripe secret and publishable keys are both test-mode — no live-mode key present",
+      "Builder shell environment: no live-mode Stripe secret key variable is set",
+      "No 'stripe' CLI installed in the builder image",
+      "Vault broker (/health reachable) does not vend secrets to builders ('Secrets never go to builders')",
+      "No live-mode Stripe key found on disk for this account"
     ]
   },
   "notes": [
-    "This site's donate flow (app/api/create-checkout/route.ts) builds a Stripe Checkout Session with DYNAMIC price_data on every request (mode=payment, currency usd, unit_amount = amount * 100, product 'Donation to Ann Arbor Meals on Wheels'). It uses NO stored Stripe Price/Product objects and NO static Payment Links, so there are no sandbox price identifiers to map (sandbox_price_id is null for every tier).",
+    "This site's donate flow (app/api/create-checkout/route.ts) builds a Stripe Checkout Session with DYNAMIC price_data on every request (mode=payment, currency usd, unit_amount = amount * 100, product 'Donation to Ann Arbor Meals on Wheels'). It uses NO stored Stripe Price/Product objects and NO static Payment Links, so there are no sandbox price identifiers to map (sandbox_price_id is null for every tier). This was re-confirmed by enumerating Stripe objects (see sandbox_objects_enumerated: 0 prices / 0 products / 0 payment links).",
     "Because pricing is env-driven and dynamic, the actual test -> live cutover for this site is an environment-variable key swap in Cloudflare Pages (documented in docs/stripe-cutover-inventory.md), not per-price object creation.",
-    "Per mission scope, the checkout/donation flow was NOT switched to any live identifiers and no donation tier, page, or flow was changed."
+    "Per mission scope, the checkout/donation flow was NOT switched to any live identifiers and no donation tier, page, or flow was changed. The /version endpoint was not touched."
   ],
   "tiers": [
     {
