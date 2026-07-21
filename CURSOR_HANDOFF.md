@@ -89,7 +89,8 @@ These are also set in Cloudflare Pages environment variables.
 ### Data Fetching
 - `/lib/supabase.ts` - Supabase client
 - `/lib/shopify.ts` - Shopify Storefront API client
-- `/lib/stripe.ts` - Stripe server client
+- `/lib/stripe.ts` - Stripe client helper (publishable key only)
+- `/lib/stripe-server.ts` - Stripe server client (secret key, server-only)
 
 ### Dynamic Routes
 - `/app/gallery/page.tsx` - Fetches from Supabase `photo_gallery` table

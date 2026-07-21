@@ -1,5 +1,10 @@
+// Client-side Stripe helper.
+//
+// This module is safe to import from client components: it only touches the
+// publishable key, which is exposed to the browser via NEXT_PUBLIC_*. The
+// server SDK and the secret key live in `lib/stripe-server.ts` and must never
+// be imported here, so secret material can never be bundled into the browser.
 import { loadStripe, Stripe } from "@stripe/stripe-js";
-import StripeServer from "stripe";
 
 let stripePromise: Promise<Stripe | null>;
 
@@ -9,11 +14,3 @@ export function getStripe(): Promise<Stripe | null> {
   }
   return stripePromise;
 }
-
-// Server-side Stripe client
-export function getStripeServer(): StripeServer {
-  return new StripeServer(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-12-15.clover",
-  });
-}
-
