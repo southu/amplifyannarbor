@@ -33,9 +33,9 @@ A modern Next.js website for Amplify Ann Arbor, a charity concert benefiting Ann
    npm install
    ```
 
-3. Copy the environment file and fill in your values:
+3. Copy the environment file and fill in your values (test-mode keys only):
    ```bash
-   cp env.example .env.local
+   cp .env.example .env.local
    ```
 
 4. Set up the database:
@@ -70,6 +70,21 @@ SHOPIFY_STOREFRONT_ACCESS_TOKEN=your_token
 # Site
 NEXT_PUBLIC_SITE_URL=https://amplifyannarbor.com
 ```
+
+See [`.env.example`](.env.example) for a ready-to-copy template. Populate `.env.local`
+(and CI) with **Stripe test-mode keys only** (`pk_test_…`, `sk_test_…`, test `whsec_…`).
+
+### Stripe keys & secrets
+
+- `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are read **server-side only**
+  (`process.env` inside API routes / edge functions) and are never imported into
+  client components or shipped to the browser.
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is the **only** Stripe value exposed to the
+  client, via Next.js's `NEXT_PUBLIC_` public-env convention.
+- **Live keys are configured ONLY in the Cloudflare Pages production environment's
+  secret store** (the Pages dashboard, or `wrangler pages secret put …`). They are
+  never committed to the repo and never embedded in client code. All `.env*` files
+  except `.env.example` are gitignored.
 
 ## Project Structure
 
