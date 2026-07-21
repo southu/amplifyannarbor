@@ -34,7 +34,7 @@
     "resolution": "Provision a LIVE-mode Stripe secret key (live-mode prefix) for acct_1SpYRlLAJCFZhZvj, then run the committed one-command helper to create the live Price objects and rewrite this file with the real IDs: `STRIPE_SECRET_KEY=<live-secret-key> node scripts/create-live-stripe-prices.mjs` (the key is read only from env; it is never written to the repo, this JSON, or logs). Review the diff, commit, and push. Separately add the live publishable/secret/webhook keys to the Cloudflare Pages 'amplifyannarbor' production secret store for the later checkout cutover step.",
     "remediation_command": "STRIPE_SECRET_KEY=<live-secret-key> node scripts/create-live-stripe-prices.mjs",
     "checked_this_iteration": [
-      "Cloudflare Pages 'amplifyannarbor' production env: the configured Stripe secret and publishable keys are both test-mode — no live-mode key present",
+      "Cloudflare Pages 'amplifyannarbor' production env read directly via the Cloudflare API this iteration: the STRIPE_SECRET_KEY value carries the test-mode prefix (not the live-mode prefix) and the publishable key is a test-mode pk_test key — no live-mode secret key is configured (the key value itself is never recorded here or in logs)",
       "Builder shell environment: no live-mode Stripe secret key variable is set",
       "No 'stripe' CLI installed in the builder image",
       "Vault broker (/health reachable) does not vend secrets to builders ('Secrets never go to builders')",
