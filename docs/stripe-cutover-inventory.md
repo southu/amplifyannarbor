@@ -152,4 +152,48 @@ All referenced source files (`lib/stripe.ts`, `app/api/create-checkout/route.ts`
 
 ---
 
-*End of inventory. This document is the only change introduced by this step; no donation behavior was modified.*
+*End of inventory. This document is the only change introduced by the step-1 inventory; no donation behavior was modified.*
+
+---
+
+## 8. Step 2 — Live-mode cutover status (2026-07-21)
+
+Machine-readable copy of this section is published at **`public/stripe-cutover.json`** → served at https://amplifyannarbor.com/stripe-cutover.json. That file and this section contain **no secret key material**.
+
+### 8.1 Live account activation — CONFIRMED ✅
+
+Queried the Stripe account via `GET https://api.stripe.com/v1/account` (the account object is shared across test/live mode and reports the account's real live-activation state):
+
+| Field | Value |
+|---|---|
+| `account_id` | `acct_1SpYRlLAJCFZhZvj` |
+| `charges_enabled` | **true** |
+| `payouts_enabled` | **true** |
+| `details_submitted` | **true** |
+| `country` / `default_currency` | `US` / `usd` |
+| `business_type` | `non_profit` |
+
+**The live Stripe account is fully activated** — business details submitted and a payout bank account attached. It can accept live charges and receive payouts (mission goal 1 satisfied).
+
+### 8.2 Sandbox donation tiers (from §4) → live mapping
+
+| Tier | Amount | Currency | Interval | Sandbox price ID | Live price ID | Live Payment Link |
+|---|---|---|---|---|---|---|
+| preset | $10 | usd | one-time | — (dynamic) | *pending live key* | n/a |
+| preset | $25 | usd | one-time | — (dynamic) | *pending live key* | n/a |
+| preset (default) | $50 | usd | one-time | — (dynamic) | *pending live key* | n/a |
+| preset | $100 | usd | one-time | — (dynamic) | *pending live key* | n/a |
+| preset | $250 | usd | one-time | — (dynamic) | *pending live key* | n/a |
+| preset | $500 | usd | one-time | — (dynamic) | *pending live key* | n/a |
+| custom amount (min $1) | variable | usd | one-time | — (dynamic) | *pending live key* | n/a |
+
+**No recurring/subscription tiers exist** (§4 confirmed `mode=payment` only).
+
+### 8.3 Why there are no sandbox price IDs, and why live prices are pending
+
+- **Dynamic pricing, no stored objects.** As documented in §4/§6, the donate flow (`app/api/create-checkout/route.ts`) creates each Checkout Session with **dynamic `price_data`** (product *"Donation to Ann Arbor Meals on Wheels"*, `unit_amount = amount × 100`, currency `usd`). The sandbox has **zero persistent Stripe Price/Product objects and no static Payment Links**, so there are no sandbox `price_…` identifiers to mirror. For this site the real test→live cutover is an **environment-variable key swap** in Cloudflare Pages (see §6), not price-object creation.
+- **Blocker — no live secret key in the deploy environment.** Creating live-mode Price objects requires a live-mode Stripe secret key. The only Stripe secret configured in the Cloudflare Pages `amplifyannarbor` production/preview environment is a **test-mode** key; no live-mode key is present, no `stripe` CLI or Stripe secret exists in the builder environment, the vault broker exposes no Stripe credential, and no Railway project holds one. **Live Price objects therefore cannot be created this iteration and `live_price_id` is left null rather than fabricated.**
+
+**To finish the live-tier cutover:** add the live-mode Stripe keys (live publishable + secret, and a live webhook signing secret) to the Cloudflare Pages `amplifyannarbor` production secret store, then either keep the existing dynamic-pricing flow (recommended — no price objects needed) or create one live Price per tier and populate `live_price_id` in `public/stripe-cutover.json`.
+
+> Per mission scope, the checkout/donation flow was **not** switched to live identifiers, no donation tier/page/flow was changed, and the `/version` endpoint was not touched.

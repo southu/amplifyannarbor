@@ -1,0 +1,127 @@
+{
+  "$comment": "Stripe live-mode cutover mapping for Amplify Ann Arbor (Ann Arbor Meals on Wheels). Machine-readable companion to docs/stripe-cutover-inventory.md. Contains NO secret key material of any kind. Generated as step 2 of the sandbox -> live cutover.",
+  "generated": "2026-07-21",
+  "step": "2-live-tiers",
+  "account": {
+    "id": "acct_1SpYRlLAJCFZhZvj",
+    "country": "US",
+    "default_currency": "usd",
+    "business_type": "non_profit"
+  },
+  "activation": {
+    "charges_enabled": true,
+    "payouts_enabled": true,
+    "details_submitted": true,
+    "verified_via": "Stripe API GET /v1/account",
+    "verified_on": "2026-07-21",
+    "note": "The Stripe account object is shared across test and live mode; charges_enabled/payouts_enabled/details_submitted reflect the account's real live-activation state. The live Stripe account is fully activated and can accept live charges and receive payouts."
+  },
+  "sandbox_pricing_model": "dynamic_price_data",
+  "uses_payment_links": false,
+  "status": "live_prices_pending_live_key",
+  "blocker": {
+    "code": "no_live_secret_key_in_environment",
+    "summary": "Live-mode Stripe price/product objects cannot be created this step because no live-mode secret key is present in the deploy environment. Only a test-mode secret key is configured in Cloudflare Pages. The live account itself is fully activated (see activation).",
+    "resolution": "Add the live-mode Stripe keys (live publishable + secret, and a live webhook signing secret) to the Cloudflare Pages 'amplifyannarbor' production environment secret store, then create one live Price per tier (or keep dynamic pricing) and populate live_price_id below.",
+    "checked": [
+      "Cloudflare Pages amplifyannarbor env (production + preview): the deployed Stripe secret key is a test-mode key; no live-mode key is present",
+      "No stripe CLI installed and no Stripe secret in the builder environment",
+      "Vault broker exposes no Stripe credential",
+      "No Stripe variables in any Railway project"
+    ]
+  },
+  "notes": [
+    "This site's donate flow (app/api/create-checkout/route.ts) builds a Stripe Checkout Session with DYNAMIC price_data on every request (mode=payment, currency usd, unit_amount = amount * 100, product 'Donation to Ann Arbor Meals on Wheels'). It uses NO stored Stripe Price/Product objects and NO static Payment Links, so there are no sandbox price identifiers to map (sandbox_price_id is null for every tier).",
+    "Because pricing is env-driven and dynamic, the actual test -> live cutover for this site is an environment-variable key swap in Cloudflare Pages (documented in docs/stripe-cutover-inventory.md), not per-price object creation.",
+    "Per mission scope, the checkout/donation flow was NOT switched to any live identifiers and no donation tier, page, or flow was changed."
+  ],
+  "tiers": [
+    {
+      "tier": "preset_10",
+      "amount": 10.0,
+      "amount_minor": 1000,
+      "currency": "usd",
+      "interval": "one_time",
+      "description": "Donation to Ann Arbor Meals on Wheels",
+      "sandbox_price_id": null,
+      "live_price_id": null,
+      "live_payment_link": null,
+      "status": "pending_live_key"
+    },
+    {
+      "tier": "preset_25",
+      "amount": 25.0,
+      "amount_minor": 2500,
+      "currency": "usd",
+      "interval": "one_time",
+      "description": "Donation to Ann Arbor Meals on Wheels",
+      "sandbox_price_id": null,
+      "live_price_id": null,
+      "live_payment_link": null,
+      "status": "pending_live_key"
+    },
+    {
+      "tier": "preset_50",
+      "amount": 50.0,
+      "amount_minor": 5000,
+      "currency": "usd",
+      "interval": "one_time",
+      "description": "Donation to Ann Arbor Meals on Wheels (default preset)",
+      "sandbox_price_id": null,
+      "live_price_id": null,
+      "live_payment_link": null,
+      "status": "pending_live_key"
+    },
+    {
+      "tier": "preset_100",
+      "amount": 100.0,
+      "amount_minor": 10000,
+      "currency": "usd",
+      "interval": "one_time",
+      "description": "Donation to Ann Arbor Meals on Wheels",
+      "sandbox_price_id": null,
+      "live_price_id": null,
+      "live_payment_link": null,
+      "status": "pending_live_key"
+    },
+    {
+      "tier": "preset_250",
+      "amount": 250.0,
+      "amount_minor": 25000,
+      "currency": "usd",
+      "interval": "one_time",
+      "description": "Donation to Ann Arbor Meals on Wheels",
+      "sandbox_price_id": null,
+      "live_price_id": null,
+      "live_payment_link": null,
+      "status": "pending_live_key"
+    },
+    {
+      "tier": "preset_500",
+      "amount": 500.0,
+      "amount_minor": 50000,
+      "currency": "usd",
+      "interval": "one_time",
+      "description": "Donation to Ann Arbor Meals on Wheels",
+      "sandbox_price_id": null,
+      "live_price_id": null,
+      "live_payment_link": null,
+      "status": "pending_live_key"
+    },
+    {
+      "tier": "custom_amount",
+      "amount": null,
+      "amount_minor": null,
+      "minimum_amount": 1.0,
+      "minimum_amount_minor": 100,
+      "currency": "usd",
+      "interval": "one_time",
+      "description": "Custom donation amount to Ann Arbor Meals on Wheels (free entry, minimum $1)",
+      "sandbox_price_id": null,
+      "live_price_id": null,
+      "live_payment_link": null,
+      "pricing_model": "dynamic_price_data",
+      "status": "pending_live_key"
+    }
+  ]
+}
