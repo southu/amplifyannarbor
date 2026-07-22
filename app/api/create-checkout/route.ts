@@ -93,6 +93,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Stripe returned 200 but, defensively, guard against a missing hosted
+    // Checkout URL so the client never redirects to `undefined`. The url is the
+    // Stripe-hosted session (test or live per the secret key) — we do not parse
+    // or rewrite it; whichever mode the key selects flows straight through.
+    if (!session.url) {
+      console.error("Stripe session missing url:", session);
+      return NextResponse.json(
+        { error: "Failed to create checkout session" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Error creating checkout session:", error);
