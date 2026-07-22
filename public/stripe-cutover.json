@@ -16,9 +16,9 @@
     "verified_on": "2026-07-22",
     "note": "Live account acct_1SpYReLA5oeiO5iD activated: charges_enabled=True, payouts_enabled=True, details_submitted=True."
   },
-  "uses_payment_links": false,
+  "uses_payment_links": true,
   "live_objects_created": true,
-  "status": "live_prices_created",
+  "status": "live_prices_and_payment_links",
   "sandbox_objects_enumerated": {
     "checked_on": "2026-07-21",
     "method": "Stripe API GET /v1/prices, /v1/products, /v1/payment_links (test mode)",
@@ -26,9 +26,10 @@
     "note": "The donate flow (app/api/create-checkout/route.ts) stores NO Stripe Price/Product objects and uses NO static Payment Links: it builds a Checkout Session with dynamic price_data per request. So there are no sandbox price_ identifiers tied to the donation tiers to mirror; sandbox_price_id is null for every tier because the flow never referenced a stored Price. The live_price_id / live_product_id values in 'tiers' are Stripe Product/Price objects created this step, one per tier (see 'disclosure' for the mode)."
   },
   "notes": [
-    "Donate flow still uses dynamic price_data until a later cutover step; these live Price IDs are the step-2 mapping only.",
-    "live_price_id / live_product_id below are genuine LIVE-mode Stripe objects (created with sk_live_).",
-    "No secret key material of any kind appears in this file."
+    "Live-mode Stripe Payment Links for production donate cutover.",
+    "Donate UI redirects to live buy.stripe.com Payment Links (no test/sandbox checkout).",
+    "Server create-checkout remains for API compatibility but production should prefer Payment Links until CF Pages has sk_live_.",
+    "No secret key material in this file."
   ],
   "tiers": [
     {
@@ -41,9 +42,10 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WJLA5oeiO5iDl90qqkmh",
       "live_product_id": "prod_UvzVmwQkJUPr9e",
-      "live_payment_link": null,
+      "live_payment_link": "https://donate.stripe.com/6oUcN62KSaoIc3acMofnO00",
       "status": "live",
-      "price_mode": "live"
+      "price_mode": "live",
+      "live_payment_link_id": "plink_1Tw9OnLA5oeiO5iDNrhxXXog"
     },
     {
       "tier": "preset_25",
@@ -55,9 +57,10 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WKLA5oeiO5iDRf7ZUupf",
       "live_product_id": "prod_UvzVQNZPFXzP6m",
-      "live_payment_link": null,
+      "live_payment_link": "https://donate.stripe.com/fZu14o0CKaoIffmaEgfnO01",
       "status": "live",
-      "price_mode": "live"
+      "price_mode": "live",
+      "live_payment_link_id": "plink_1Tw9OoLA5oeiO5iDl4YPilXp"
     },
     {
       "tier": "preset_50",
@@ -69,9 +72,10 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WKLA5oeiO5iDeacCNoYu",
       "live_product_id": "prod_UvzV41HBQX8BFo",
-      "live_payment_link": null,
+      "live_payment_link": "https://donate.stripe.com/7sYeVe4T068sebi27KfnO02",
       "status": "live",
-      "price_mode": "live"
+      "price_mode": "live",
+      "live_payment_link_id": "plink_1Tw9OoLA5oeiO5iDcjOIRLV4"
     },
     {
       "tier": "preset_100",
@@ -83,9 +87,10 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WLLA5oeiO5iDMQn9Sg5F",
       "live_product_id": "prod_UvzVGl7tz2Nvz4",
-      "live_payment_link": null,
+      "live_payment_link": "https://donate.stripe.com/aFa5kE2KSgN67MU4fSfnO03",
       "status": "live",
-      "price_mode": "live"
+      "price_mode": "live",
+      "live_payment_link_id": "plink_1Tw9OpLA5oeiO5iDVSw5xwS1"
     },
     {
       "tier": "preset_250",
@@ -97,9 +102,10 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WLLA5oeiO5iDd9xBRLlV",
       "live_product_id": "prod_UvzVzzdANtZK7j",
-      "live_payment_link": null,
+      "live_payment_link": "https://donate.stripe.com/8x2bJ21GO7cw3wE13GfnO04",
       "status": "live",
-      "price_mode": "live"
+      "price_mode": "live",
+      "live_payment_link_id": "plink_1Tw9OpLA5oeiO5iDQXHMAjSp"
     },
     {
       "tier": "preset_500",
@@ -111,9 +117,10 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WMLA5oeiO5iDqWd9SyMu",
       "live_product_id": "prod_UvzVpPH000x3C4",
-      "live_payment_link": null,
+      "live_payment_link": "https://donate.stripe.com/dRm9AU4T00O8gjqeUwfnO05",
       "status": "live",
-      "price_mode": "live"
+      "price_mode": "live",
+      "live_payment_link_id": "plink_1Tw9OqLA5oeiO5iD4MK1hTyL"
     },
     {
       "tier": "custom_amount",
@@ -125,12 +132,13 @@
       "interval": "one_time",
       "description": "Custom donation amount to Ann Arbor Meals on Wheels (free entry, minimum $1)",
       "sandbox_price_id": null,
-      "live_price_id": "price_1Tw7WNLA5oeiO5iDjWcbX76S",
-      "live_product_id": "prod_UvzVoxCabdTP0b",
-      "live_payment_link": null,
+      "live_price_id": "price_1Tw9OqLA5oeiO5iDqeYZgL5h",
+      "live_product_id": "prod_Uw1RrIyekcHNBI",
+      "live_payment_link": "https://donate.stripe.com/dRm00kgBI1Scd7e13GfnO06",
       "pricing_model": "dynamic_price_data",
       "status": "live",
-      "price_mode": "live"
+      "price_mode": "live",
+      "live_payment_link_id": "plink_1Tw9OqLA5oeiO5iDSlDWLPI4"
     }
   ],
   "mode": "live",

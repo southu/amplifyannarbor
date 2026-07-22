@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { cn, formatCurrency } from "@/lib/utils";
-import { CreditCard, Lock, Heart } from "lucide-react";
+import { liveDonateUrl } from "@/lib/stripe-live-links";
+import { Lock, Heart } from "lucide-react";
 
 const donationSchema = z.object({
   amount: z.number().min(1, "Please enter an amount"),
@@ -54,32 +55,35 @@ export function DonationForm() {
     setIsProcessing(true);
 
     try {
-      // Create Stripe checkout session
-      const response = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: data.amount,
-          name: data.name,
-          email: data.email,
-          message: data.message,
-        }),
+      // Production donate uses LIVE Stripe Payment Links (donate.stripe.com).
+      // Preset amounts map 1:1; custom amount uses the adjustable live link
+      // (donor confirms amount on Stripe Checkout — live mode, not sandbox).
+      const isPreset =
+        !customAmount &&
+        selectedAmount != null &&
+        presetAmounts.includes(selectedAmount);
+      const amountKey: number | "custom" = isPreset
+        ? selectedAmount!
+        : "custom";
+
+      const refParts = [
+        data.name?.trim(),
+        data.message?.trim() ? `msg:${data.message.trim().slice(0, 80)}` : "",
+      ].filter(Boolean);
+      const url = liveDonateUrl(amountKey, {
+        email: data.email,
+        clientReferenceId: refParts.join("|").slice(0, 200) || undefined,
       });
 
-      const result = await response.json();
-
-      if (result.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = result.url;
-      } else {
-        throw new Error(result.error || "Failed to create checkout session");
+      // Hard-fail if we somehow still have a test Payment Link.
+      if (url.includes("/test_") || url.includes("test.stripe.com")) {
+        throw new Error("Refusing to open a test-mode Stripe link on production");
       }
+
+      window.location.href = url;
     } catch (error) {
       console.error("Donation error:", error);
       alert("There was an error processing your donation. Please try again.");
-    } finally {
       setIsProcessing(false);
     }
   };

@@ -60,9 +60,18 @@ export async function POST(request: NextRequest) {
     // donation. Detection is a non-secret prefix check — the key value is never
     // logged or returned. Default (flag unset) is a no-op, so dev/CI and the
     // current production behavior are unchanged.
-    const requireLive = /^(1|true|yes|on)$/i.test(
-      (process.env.STRIPE_REQUIRE_LIVE ?? "").trim()
-    );
+    // Always refuse minting sandbox sessions when the request is clearly for
+    // production amplifyannarbor.com — the public donate form uses live Payment
+    // Links, and this API must not reintroduce cs_test_ checkouts on the live
+    // domain if CF Pages still holds a test secret.
+    const host = (request.headers.get("host") || "").toLowerCase();
+    const isProdHost =
+      host === "amplifyannarbor.com" ||
+      host === "www.amplifyannarbor.com" ||
+      host.endsWith(".amplifyannarbor.com");
+    const requireLive =
+      isProdHost ||
+      /^(1|true|yes|on)$/i.test((process.env.STRIPE_REQUIRE_LIVE ?? "").trim());
     const keyIsTestMode = /^(sk|rk)_test_/.test(stripeSecretKey.trim());
     if (requireLive && keyIsTestMode) {
       console.error(
