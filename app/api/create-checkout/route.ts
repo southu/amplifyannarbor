@@ -52,6 +52,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Optional fail-closed guard for the live cutover. When STRIPE_REQUIRE_LIVE
+    // is set truthy (production should set it once the live key is in place),
+    // a test-mode key is refused *before* any Stripe call, so a misconfigured
+    // deploy returns a clean error instead of silently minting sandbox
+    // ("Amplify Ann Arbor sandbox") checkout sessions that never collect a real
+    // donation. Detection is a non-secret prefix check — the key value is never
+    // logged or returned. Default (flag unset) is a no-op, so dev/CI and the
+    // current production behavior are unchanged.
+    const requireLive = /^(1|true|yes|on)$/i.test(
+      (process.env.STRIPE_REQUIRE_LIVE ?? "").trim()
+    );
+    const keyIsTestMode = /^(sk|rk)_test_/.test(stripeSecretKey.trim());
+    if (requireLive && keyIsTestMode) {
+      console.error(
+        "STRIPE_REQUIRE_LIVE is set but STRIPE_SECRET_KEY is a test-mode key " +
+          "(sk_test_/rk_test_). Refusing to create a sandbox Checkout session. " +
+          "Set the live key (sk_live_...) in the Cloudflare Pages production " +
+          "environment to complete the live cutover."
+      );
+      return NextResponse.json(
+        { error: "Payment system is not in live mode" },
+        { status: 503 }
+      );
+    }
+
     // Canonical, absolute production site URL for the post-checkout redirects.
     // Stripe requires success_url / cancel_url to be absolute https URLs, and
     // the mission requires them to land on amplifyannarbor.com production pages,
