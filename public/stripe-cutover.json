@@ -28,7 +28,7 @@
   "notes": [
     "Live-mode Stripe Payment Links for production donate cutover.",
     "Donate UI redirects to live buy.stripe.com Payment Links (no test/sandbox checkout).",
-    "Server create-checkout remains for API compatibility but production should prefer Payment Links until CF Pages has sk_live_.",
+    "The dead server-side app/api/create-checkout route was REMOVED: the live donate flow uses Payment Links, and with CF Pages still holding sk_test_ that endpoint only advertised a non-live (503) payment surface. Restore it only alongside a live STRIPE_SECRET_KEY.",
     "No secret key material in this file."
   ],
   "tiers": [
