@@ -105,6 +105,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Observability for the test→live cutover: Stripe reports the mode of the
+    // created session via `session.livemode` (true for sk_live_ keys, false for
+    // sk_test_). We never expose the key, but if the PRODUCTION deployment is
+    // still minting test-mode sessions, emit a loud warning so the operator can
+    // see in Cloudflare logs that STRIPE_SECRET_KEY is still a test key — the
+    // one remaining action to complete the live cutover. This is diagnostic
+    // only and never blocks a working checkout.
+    const isProdSite = /(^|\.)amplifyannarbor\.com$/i.test(
+      normalizeSiteUrl(siteUrl).replace(/^https?:\/\//i, "")
+    );
+    if (isProdSite && session.livemode === false) {
+      console.warn(
+        "STRIPE MODE WARNING: production site is creating TEST-mode Checkout " +
+          "sessions (session.livemode=false). Set STRIPE_SECRET_KEY to the " +
+          "live key (sk_live_...) in the Cloudflare Pages production environment " +
+          "to complete the live cutover."
+      );
+    }
+
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Error creating checkout session:", error);
