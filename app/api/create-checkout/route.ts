@@ -17,7 +17,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { amount, name, email, message } = body;
 
-    if (!amount || amount < 1) {
+    // Coerce and validate the donation amount up front. A bare `amount < 1`
+    // check lets non-numeric input through (e.g. "abc" < 1 is false), which
+    // would later produce a `unit_amount` of "NaN" and a confusing Stripe 500.
+    // Require a finite number of at least $1 so callers get a clean 400 instead.
+    const numericAmount = typeof amount === "number" ? amount : Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount < 1) {
       return NextResponse.json(
         { error: "Invalid donation amount" },
         { status: 400 }
@@ -72,7 +77,7 @@ export async function POST(request: NextRequest) {
         "cancel_url": `${siteUrl}/donate`,
         "customer_email": email,
         "line_items[0][price_data][currency]": "usd",
-        "line_items[0][price_data][unit_amount]": String(Math.round(amount * 100)),
+        "line_items[0][price_data][unit_amount]": String(Math.round(numericAmount * 100)),
         "line_items[0][price_data][product_data][name]": "Donation to Ann Arbor Meals on Wheels",
         "line_items[0][price_data][product_data][description]": "via Amplify Ann Arbor",
         "line_items[0][quantity]": "1",
