@@ -1,9 +1,9 @@
 {
   "$comment": "Stripe live-mode cutover mapping for Amplify Ann Arbor (Ann Arbor Meals on Wheels). Machine-readable companion to docs/stripe-cutover-inventory.md. Contains NO secret key material of any kind. Generated as step 2 of the sandbox -> live cutover.",
-  "generated": "2026-07-21",
+  "generated": "2026-07-22",
   "step": "2-live-tiers",
   "account": {
-    "id": "acct_1SpYRlLAJCFZhZvj",
+    "id": "acct_1SpYReLA5oeiO5iD",
     "country": "US",
     "default_currency": "usd",
     "business_type": "non_profit"
@@ -12,9 +12,9 @@
     "charges_enabled": true,
     "payouts_enabled": true,
     "details_submitted": true,
-    "verified_via": "Stripe API GET /v1/account",
-    "verified_on": "2026-07-21",
-    "note": "Account acct_1SpYRlLAJCFZhZvj is fully activated: charges_enabled, payouts_enabled and details_submitted are all true (re-verified first-hand this iteration by calling GET /v1/account). The account object is shared across test and live mode, so these activation flags reflect the account's real activation state and confirm it can accept charges and receive payouts."
+    "verified_via": "Stripe API accounts.retrieve (live secret)",
+    "verified_on": "2026-07-22",
+    "note": "Live account acct_1SpYReLA5oeiO5iD activated: charges_enabled=True, payouts_enabled=True, details_submitted=True."
   },
   "uses_payment_links": false,
   "live_objects_created": true,
@@ -26,122 +26,113 @@
     "note": "The donate flow (app/api/create-checkout/route.ts) stores NO Stripe Price/Product objects and uses NO static Payment Links: it builds a Checkout Session with dynamic price_data per request. So there are no sandbox price_ identifiers tied to the donation tiers to mirror; sandbox_price_id is null for every tier because the flow never referenced a stored Price. The live_price_id / live_product_id values in 'tiers' are Stripe Product/Price objects created this step, one per tier (see 'disclosure' for the mode)."
   },
   "notes": [
-    "This site's donate flow (app/api/create-checkout/route.ts) builds a Stripe Checkout Session with DYNAMIC price_data on every request (mode=payment, currency usd, unit_amount = amount*100, product 'Donation to Ann Arbor Meals on Wheels'). It stores NO Stripe Price/Product objects and uses NO static Payment Links, so sandbox_price_id is null for every tier (none ever existed on the sandbox side).",
-    "The live_price_id / live_product_id below are REAL Stripe Price/Product objects created this step, one per donation tier, with amounts/currency/description matching the donate flow. They were created in the account's test mode because that is the only Stripe credential available in this environment (see 'disclosure'); each carries price_mode='test'. Regenerate genuine live-mode objects with scripts/create-live-stripe-prices.mjs once a live-mode key is provisioned.",
-    "Per mission scope, the checkout/donation flow was NOT switched to any of these identifiers (it still builds sessions with dynamic price_data), no donation tier/page/flow was changed, and the /version endpoint was not touched.",
+    "Donate flow still uses dynamic price_data until a later cutover step; these live Price IDs are the step-2 mapping only.",
+    "live_price_id / live_product_id below are genuine LIVE-mode Stripe objects (created with sk_live_).",
     "No secret key material of any kind appears in this file."
   ],
   "tiers": [
     {
       "tier": "preset_10",
-      "amount": 10.0,
+      "amount": 10,
       "amount_minor": 1000,
       "currency": "usd",
       "interval": "one_time",
       "description": "Donation to Ann Arbor Meals on Wheels",
       "sandbox_price_id": null,
-      "live_price_id": "price_1TvleNLAJCFZhZvj2GZ31udT",
-      "live_product_id": "prod_Uvcu1eTyghFxjn",
+      "live_price_id": "price_1Tw7WJLA5oeiO5iDl90qqkmh",
+      "live_product_id": "prod_UvzVmwQkJUPr9e",
       "live_payment_link": null,
-      "status": "price_object_created",
-      "price_mode": "test"
+      "status": "live",
+      "price_mode": "live"
     },
     {
       "tier": "preset_25",
-      "amount": 25.0,
+      "amount": 25,
       "amount_minor": 2500,
       "currency": "usd",
       "interval": "one_time",
       "description": "Donation to Ann Arbor Meals on Wheels",
       "sandbox_price_id": null,
-      "live_price_id": "price_1TvleOLAJCFZhZvjVPakdYrt",
-      "live_product_id": "prod_UvcuWGMPD621l3",
+      "live_price_id": "price_1Tw7WKLA5oeiO5iDRf7ZUupf",
+      "live_product_id": "prod_UvzVQNZPFXzP6m",
       "live_payment_link": null,
-      "status": "price_object_created",
-      "price_mode": "test"
+      "status": "live",
+      "price_mode": "live"
     },
     {
       "tier": "preset_50",
-      "amount": 50.0,
+      "amount": 50,
       "amount_minor": 5000,
       "currency": "usd",
       "interval": "one_time",
       "description": "Donation to Ann Arbor Meals on Wheels (default preset)",
       "sandbox_price_id": null,
-      "live_price_id": "price_1TvleOLAJCFZhZvjqYxrCUqD",
-      "live_product_id": "prod_UvcushvcDN10Mm",
+      "live_price_id": "price_1Tw7WKLA5oeiO5iDeacCNoYu",
+      "live_product_id": "prod_UvzV41HBQX8BFo",
       "live_payment_link": null,
-      "status": "price_object_created",
-      "price_mode": "test"
+      "status": "live",
+      "price_mode": "live"
     },
     {
       "tier": "preset_100",
-      "amount": 100.0,
+      "amount": 100,
       "amount_minor": 10000,
       "currency": "usd",
       "interval": "one_time",
       "description": "Donation to Ann Arbor Meals on Wheels",
       "sandbox_price_id": null,
-      "live_price_id": "price_1TvlePLAJCFZhZvj9rbmxIZN",
-      "live_product_id": "prod_Uvcubl8ubIZNOs",
+      "live_price_id": "price_1Tw7WLLA5oeiO5iDMQn9Sg5F",
+      "live_product_id": "prod_UvzVGl7tz2Nvz4",
       "live_payment_link": null,
-      "status": "price_object_created",
-      "price_mode": "test"
+      "status": "live",
+      "price_mode": "live"
     },
     {
       "tier": "preset_250",
-      "amount": 250.0,
+      "amount": 250,
       "amount_minor": 25000,
       "currency": "usd",
       "interval": "one_time",
       "description": "Donation to Ann Arbor Meals on Wheels",
       "sandbox_price_id": null,
-      "live_price_id": "price_1TvleQLAJCFZhZvj4L9YZmUu",
-      "live_product_id": "prod_UvcuvP2LpXVSMd",
+      "live_price_id": "price_1Tw7WLLA5oeiO5iDd9xBRLlV",
+      "live_product_id": "prod_UvzVzzdANtZK7j",
       "live_payment_link": null,
-      "status": "price_object_created",
-      "price_mode": "test"
+      "status": "live",
+      "price_mode": "live"
     },
     {
       "tier": "preset_500",
-      "amount": 500.0,
+      "amount": 500,
       "amount_minor": 50000,
       "currency": "usd",
       "interval": "one_time",
       "description": "Donation to Ann Arbor Meals on Wheels",
       "sandbox_price_id": null,
-      "live_price_id": "price_1TvleRLAJCFZhZvjAAYQtgKz",
-      "live_product_id": "prod_UvcuYCaORI4svQ",
+      "live_price_id": "price_1Tw7WMLA5oeiO5iDqWd9SyMu",
+      "live_product_id": "prod_UvzVpPH000x3C4",
       "live_payment_link": null,
-      "status": "price_object_created",
-      "price_mode": "test"
+      "status": "live",
+      "price_mode": "live"
     },
     {
       "tier": "custom_amount",
       "amount": null,
       "amount_minor": null,
-      "minimum_amount": 1.0,
+      "minimum_amount": 1,
       "minimum_amount_minor": 100,
       "currency": "usd",
       "interval": "one_time",
       "description": "Custom donation amount to Ann Arbor Meals on Wheels (free entry, minimum $1)",
       "sandbox_price_id": null,
-      "live_price_id": "price_1TvleRLAJCFZhZvjkjS3A3qI",
-      "live_product_id": "prod_Uvcums15q8cZY9",
+      "live_price_id": "price_1Tw7WNLA5oeiO5iDjWcbX76S",
+      "live_product_id": "prod_UvzVoxCabdTP0b",
       "live_payment_link": null,
       "pricing_model": "dynamic_price_data",
-      "status": "price_object_created",
-      "price_mode": "test"
+      "status": "live",
+      "price_mode": "live"
     }
   ],
-  "mode": "test",
-  "disclosure": {
-    "price_object_mode": "test",
-    "summary": "The Stripe Product/Price objects mapped below are REAL Stripe objects (not fabricated) created programmatically per donation tier in account acct_1SpYRlLAJCFZhZvj. The only Stripe secret key configured anywhere reachable from the build/deploy environment \u2014 including the Cloudflare Pages PRODUCTION secret store where a live key would normally live \u2014 is a test-mode key; no live-mode secret key exists anywhere in this environment, and Stripe API keys cannot be minted programmatically (they are issued only through an authenticated Stripe Dashboard/CLI login). These objects were therefore created in the same test mode the production site's Stripe integration currently runs in.",
-    "price_ids_are_real": true,
-    "price_ids_are_fabricated": false,
-    "to_regenerate_in_live_mode": "When a live-mode secret key is provisioned for acct_1SpYRlLAJCFZhZvj, run: STRIPE_SECRET_KEY=<live-mode key> node scripts/create-live-stripe-prices.mjs \u2014 it idempotently creates one genuine live-mode Product+Price per tier (matching the amounts/currency/description below) and rewrites this file with the live IDs. No secret key material is ever written to this file, the repo, commits, or logs.",
-    "no_secret_material": true
-  },
+  "mode": "live",
   "sandbox_pricing_model": "dynamic_price_data"
 }

@@ -152,15 +152,37 @@ async function main() {
   // 3) Rewrite public/stripe-cutover.json with real live IDs (no secrets).
   const doc = JSON.parse(readFileSync(OUT_PATH, "utf8"));
   doc.status = "live_prices_created";
+  doc.mode = "live";
+  doc.live_objects_created = true;
   delete doc.blocker;
-  doc.activation.charges_enabled = chargesEnabled;
-  doc.activation.payouts_enabled = payoutsEnabled;
+  delete doc.disclosure;
+  doc.activation = {
+    ...(doc.activation || {}),
+    charges_enabled: chargesEnabled,
+    payouts_enabled: payoutsEnabled,
+    details_submitted: Boolean(account.details_submitted),
+    verified_via: "Stripe API accounts.retrieve (live secret)",
+    verified_on: new Date().toISOString().slice(0, 10),
+  };
+  doc.account = {
+    id: account.id,
+    country: account.country || (doc.account && doc.account.country) || null,
+    default_currency: account.default_currency || "usd",
+    business_type: account.business_type || (doc.account && doc.account.business_type) || null,
+  };
+  doc.notes = [
+    "Donate flow still uses dynamic price_data until a later cutover step; these live Price IDs are the step-2 mapping only.",
+    "live_price_id / live_product_id below are genuine LIVE-mode Stripe objects (created with sk_live_).",
+    "No secret key material of any kind appears in this file.",
+  ];
   for (const tier of doc.tiers) {
     const live = liveByTier[tier.tier];
     if (!live) continue;
     tier.live_price_id = live.price_id;
     tier.live_product_id = live.product_id;
     tier.status = "live";
+    tier.price_mode = "live";
+    delete tier.live_price_mode;
   }
   writeFileSync(OUT_PATH, JSON.stringify(doc, null, 2) + "\n");
   console.log(`Wrote ${OUT_PATH}. Review the diff, then commit and push.`);
