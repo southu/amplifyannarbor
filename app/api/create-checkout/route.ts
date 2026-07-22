@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "edge";
 
+// Returns an absolute https origin with no trailing slash, so it can be safely
+// concatenated with a path to build a valid Stripe redirect URL.
+function normalizeSiteUrl(raw: string): string {
+  const trimmed = raw.trim();
+  const withScheme = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  return withScheme.replace(/\/+$/, "");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -21,6 +31,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Stripe mode (test vs live) is governed ENTIRELY by which secret key the
+    // deployment environment supplies here: dev/CI configure a test key
+    // (sk_test_...), the Cloudflare Pages production environment supplies the
+    // live key (sk_live_...). The key is never hardcoded — it is read only from
+    // STRIPE_SECRET_KEY. The dynamic price_data below produces correctly-priced
+    // sessions in whichever mode the key selects, so no test-mode price/link
+    // identifiers are ever embedded in source.
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
       console.error("STRIPE_SECRET_KEY is not configured");
@@ -29,11 +46,18 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
-    // Get site URL from env, request headers, or use production URL as fallback
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-      `https://${request.headers.get("host")}` || 
-      "https://amplifyannarbor.com";
+
+    // Canonical, absolute production site URL for the post-checkout redirects.
+    // Stripe requires success_url / cancel_url to be absolute https URLs, and
+    // the mission requires them to land on amplifyannarbor.com production pages,
+    // so we normalize the configured value (add https:// if a scheme is missing,
+    // strip any trailing slash) and fall back to the request host and finally
+    // the production domain.
+    const siteUrl = normalizeSiteUrl(
+      process.env.NEXT_PUBLIC_SITE_URL ||
+        request.headers.get("host") ||
+        "amplifyannarbor.com"
+    );
 
     // Create Stripe Checkout Session using fetch (edge-compatible)
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
