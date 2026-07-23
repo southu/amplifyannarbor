@@ -44,21 +44,25 @@ shows exactly one succeeded validation PaymentIntent for the run.
 
 ## Webhook delivery (AC6) — status and operator blocker
 
-**Re-verification 2026-07-23 (run 034458, iter3):** AC6 still blocked on
-one-time operator action; no live charge/refund/endpoint mutation performed.
-This run has *fewer* credentials than before: the process env contains **no
-Stripe key of any kind** (no `STRIPE_SECRET_KEY`, no restricted read key, no
-`STRIPE_WEBHOOK_SECRET`), and the `CLOUDFLARE_API_TOKEN` is now **invalid
-entirely** — `GET /user/tokens/verify` returns `Invalid API Token` (code 1000),
-so it authenticates for *no* operation, not merely PATCH. Fixing AC6 needs a
-Stripe write key (to roll/create the endpoint signing secret) **and** Cloudflare
-Pages Edit (to store the matching `STRIPE_WEBHOOK_SECRET` and redeploy); this run
-has neither. Live checks: `/`, `/donate`, `/version` = 200; deployed SHA matches
-HEAD; `POST /api/webhooks/stripe` with a bogus signature = **400** (signature
-verification still enforced — not disabled to force a pass). `evt_1TwC0NLA5oeiO5iDUmzugqyy`
-`pending_webhooks` is unchanged at 1. See
+**Re-verification 2026-07-23 (run 041743):** AC6 still blocked on one-time
+operator action; no live charge/refund/endpoint mutation performed. The process
+env contains **no Stripe key of any kind** (no `STRIPE_SECRET_KEY`, no
+`STRIPE_RESTRICTED_KEY`, no `rk_live_`/`sk_live_`, no `STRIPE_WEBHOOK_SECRET`),
+and the `CLOUDFLARE_API_TOKEN` present in the env is **invalid** —
+`GET /user/tokens/verify` returns `Invalid API Token` (code 1000), so it
+authenticates for *no* operation. Fixing AC6 needs a Stripe write key (to
+roll/create the endpoint signing secret) **and** Cloudflare Pages Edit (to store
+the matching `STRIPE_WEBHOOK_SECRET` and redeploy); this run has neither, so the
+builder makes no Stripe API call and every Stripe-side AC is verifiable only via
+the tester's own restricted read key against the already-committed records. Live
+checks this run: `/`, `/donate`, `/version` = 200; deployed SHA
+`b0948b1` matches HEAD; `POST /api/webhooks/stripe` with a bogus signature =
+**400** (signature verification still enforced — not disabled to force a pass);
+committed-tree scan for real key values (`(sk|rk)_live_…{20,}`, `whsec_…{20,}`)
+= no matches (AC12 clean). `evt_1TwC0NLA5oeiO5iDUmzugqyy` `pending_webhooks` is
+unchanged at 1. See
 `docs/evidence/stripe-live-validation/webhook-delivery-status.json`
-→ `reverification_2026-07-23_run034458_iter3`.
+→ `reverification_2026-07-23_run041743`.
 
 The endpoint `we_1TwCAALA5oeiO5iDBwdOFWMt` was created *after* the original
 checkout event, so the event was never delivered on the first pass. The builder
