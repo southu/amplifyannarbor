@@ -79,48 +79,75 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
   }
 
-  const params = new URLSearchParams();
-  params.set("mode", "payment");
-  params.set("success_url", SUCCESS_URL);
-  params.set("cancel_url", CANCEL_URL);
-  params.set("submit_type", "donate");
-
-  const presetPrice = !body.custom ? LIVE_PRICE_BY_AMOUNT[amount] : undefined;
-  if (presetPrice) {
-    // Fixed preset tier -> its live Price object (amount unchanged).
-    params.set("line_items[0][price]", presetPrice);
-    params.set("line_items[0][quantity]", "1");
-  } else {
-    // Custom amount -> ad-hoc live price_data at the donor-entered amount.
-    params.set("line_items[0][price_data][currency]", "usd");
-    params.set("line_items[0][price_data][unit_amount]", String(Math.round(amount * 100)));
-    params.set("line_items[0][price_data][product_data][name]", DONATION_NAME);
-    params.set("line_items[0][quantity]", "1");
-  }
-
-  if (body.email) params.set("customer_email", body.email);
   const ref = [body.name?.trim(), body.message?.trim() ? `msg:${body.message.trim().slice(0, 80)}` : ""]
     .filter(Boolean)
     .join("|")
     .slice(0, 200);
-  if (ref) params.set("client_reference_id", ref);
 
-  const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${secret}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: params.toString(),
-  });
+  // Shared session params (cancel_url back to /donate is the whole point of this
+  // route). The line item is filled in per-attempt below.
+  const baseParams = () => {
+    const p = new URLSearchParams();
+    p.set("mode", "payment");
+    p.set("success_url", SUCCESS_URL);
+    p.set("cancel_url", CANCEL_URL);
+    p.set("submit_type", "donate");
+    if (body.email) p.set("customer_email", body.email);
+    if (ref) p.set("client_reference_id", ref);
+    return p;
+  };
 
-  const session = (await resp.json()) as { url?: string; error?: { message?: string } };
-  if (!resp.ok || !session.url) {
+  // Custom (donor-entered) amount -> ad-hoc live price_data at that amount.
+  const withPriceData = () => {
+    const p = baseParams();
+    p.set("line_items[0][price_data][currency]", "usd");
+    p.set("line_items[0][price_data][unit_amount]", String(Math.round(amount * 100)));
+    p.set("line_items[0][price_data][product_data][name]", DONATION_NAME);
+    p.set("line_items[0][quantity]", "1");
+    return p;
+  };
+
+  async function createSession(params: URLSearchParams) {
+    const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secret}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+    const session = (await resp.json()) as { url?: string; error?: { message?: string } };
+    return { ok: resp.ok && !!session.url, session };
+  }
+
+  // Preferred for preset tiers: the live Price object from the step-3 map. But
+  // if that Price ID is ever stale/absent in the live account, DON'T silently
+  // fall back to a Payment Link (which cannot set cancel_url and would fail
+  // AC4) — instead re-create the session with dynamic price_data at the SAME
+  // amount, so we still return a live checkout.stripe.com session whose
+  // cancel_url points at /donate. Amounts stay identical either way.
+  const presetPrice = !body.custom ? LIVE_PRICE_BY_AMOUNT[amount] : undefined;
+
+  let result;
+  if (presetPrice) {
+    const p = baseParams();
+    p.set("line_items[0][price]", presetPrice);
+    p.set("line_items[0][quantity]", "1");
+    result = await createSession(p);
+    if (!result.ok) {
+      // Preset live Price failed — retry once with equivalent price_data.
+      result = await createSession(withPriceData());
+    }
+  } else {
+    result = await createSession(withPriceData());
+  }
+
+  if (!result.ok) {
     return NextResponse.json(
-      { error: session.error?.message || "Unable to create checkout session" },
+      { error: result.session.error?.message || "Unable to create checkout session" },
       { status: 502 }
     );
   }
 
-  return NextResponse.json({ url: session.url });
+  return NextResponse.json({ url: result.session.url });
 }
