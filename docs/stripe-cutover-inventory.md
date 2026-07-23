@@ -304,3 +304,18 @@ then redeploy. The already-deployed code (`df72ed5`) will immediately emit live 
 So the live Payment Link session is genuinely live (`cs_live_`, AC3 ✅) but its back/cancel target is Stripe's default `https://stripe.com` (AC4 ✗). Payment Links expose **no** cancel-URL knob (no field on the plink, no query param, no `payment_pages` writeable path — `return_url` is null and read-only here), so the server-side Checkout path (which sets `cancel_url` explicitly) remains the only way to satisfy AC4.
 
 **Blocker unchanged.** CF `amplifyannarbor` **production** + **preview** still hold `STRIPE_SECRET_KEY = sk_test_51S…` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_test_51S…` (`plain_text`, read via CF API this iteration). No `sk_live_`/`rk_live_` value exists in the CF env, runner shell env, provisioning vault (`RATCHET_PROVISION_ENABLED=false`, vault count 0), repo tree, or git history. Stripe never exposes a secret/restricted key via API (Dashboard/CLI login only), so this is a human step. The single operator action above (now satisfiable with **either** an `sk_live_` **or** an `rk_live_` key) is all that's left.
+
+---
+
+## Iteration 19 — AC4 blocker re-confirmed first-hand; root cause is CF-prod test key, not repo (2026-07-23, live SHA `5b6ca2f`)
+
+**No code change is possible for AC4 this iteration — re-verified end-to-end.** The AC4 fix (server-side Checkout with explicit `cancel_url = https://amplifyannarbor.com/donate`, accepting `sk_live_` **or** `rk_live_`) is already implemented and deployed at HEAD `5b6ca2f`. It activates automatically the instant a live key exists in the production runtime; until then it 404s and the CTA falls back to live Payment Links whose cancel target Stripe fixes to `https://stripe.com`.
+
+**First-hand findings this iteration:**
+- **Builder shell env** exposes `STRIPE_SECRET_KEY` **present but empty** (length 0) — no usable key, live or test.
+- **Live production probe:** `POST https://amplifyannarbor.com/api/create-checkout` → **HTTP 404** (route’s live-only guard rejecting the deployed test key); `/donate` → 200; `/version` = `5b6ca2fde8ce982e82802d49e79e6832daca32f8` (= local `HEAD`).
+- **Cloudflare API read** (run `CLOUDFLARE_API_TOKEN`) of project `amplifyannarbor`: **production** and **preview** both still hold `STRIPE_SECRET_KEY = sk_test_…` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_test_…` (`plain_text`). Confirmed the token has **read+write** to this env store — so the live key can be set via API the moment it exists; the missing capability is purely the live key **value**.
+- **Operator hand-off channels** retried: **Gmail** `search_threads` and **Google Drive** `search_files` MCP tools both return "permissions … not granted" in this headless run.
+- **No test identifier ships to production assets:** grep of `app`/`components`/`lib`/`public` for `buy.stripe.com/test_`/`pk_test_`/`cs_test_` is clean (AC2/AC6 ✅).
+
+No key was fabricated; the donate tiers/amounts/labels/copy and the `/version` endpoint were untouched. **AC4 remains blocked solely on one human step:** set a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_`) in the Cloudflare Pages `amplifyannarbor` **production** environment and redeploy — the unchanged code then emits `cs_live_` sessions with `cancel_url = https://amplifyannarbor.com/donate`, satisfying AC3/AC4/AC5 with no further code change.
