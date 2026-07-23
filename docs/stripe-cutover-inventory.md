@@ -332,3 +332,18 @@ No key was fabricated; the donate tiers/amounts/labels/copy and the `/version` e
 - **Builder shell** `STRIPE_SECRET_KEY` is **UNSET**; CF token present but Stripe never exposes secret/restricted key values via API, so no live key is reachable here.
 
 No key was fabricated; donate tiers/amounts/labels/copy and the `/version` endpoint were untouched. **AC4 remains blocked solely on one human ops step:** set a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_`) in the Cloudflare Pages `amplifyannarbor` **production** environment and redeploy — the unchanged code then emits `cs_live_` sessions with `cancel_url = https://amplifyannarbor.com/donate`, satisfying AC3/AC4/AC5 with no further code change. Do not re-run the exhausted live-key hunt (iters 17–19); only re-verify and record.
+
+---
+
+## Iteration 21 — AC4 blocker re-confirmed; front-end wiring audited so a live key auto-unblocks (2026-07-23, live SHA `6a536e8`)
+
+**No AC4 code change is possible this iteration — re-verified end-to-end, including the client wiring.** The server-side live-Checkout route already ships at HEAD `6a536e8`: it reads `STRIPE_SECRET_KEY` from env only, accepts `sk_live_` **or** `rk_live_` (else returns 404), and creates `POST /v1/checkout/sessions` with explicit `success_url = https://amplifyannarbor.com/donate/success` and `cancel_url = https://amplifyannarbor.com/donate`.
+
+**Client wiring audited this iteration (`components/donate/DonationForm.tsx`).** `onSubmit` calls `POST /api/create-checkout` **first**; it uses the returned session only when the URL starts with `https://checkout.stripe.com/`, otherwise it falls back to the seven live `donate.stripe.com` Payment Links (with a hard-fail guard against any `/test_` link). So the moment a live key is present in the CF prod runtime, the route stops 404ing, the CTA rides the server-side path, and AC3/AC4/AC5 pass with **zero further code change**. The Payment-Link fallback is the only reason cancel currently resolves to `https://stripe.com` (Payment Links expose no cancel-URL knob).
+
+**First-hand findings this iteration:**
+- **Live prod:** `/version` = `6a536e8b6930ea058fd9a279b37adf8bb666b674` (= local `HEAD`); `/donate` → 200; `POST /api/create-checkout` → **HTTP 404** (live-only guard rejecting the deployed test key).
+- **Cloudflare API read** (run `CLOUDFLARE_API_TOKEN`) of Pages project `amplifyannarbor`: **production** and **preview** both hold `STRIPE_SECRET_KEY = sk_test_51Sp…` (`plain_text`), `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_test_51Sp…` (`plain_text`), `STRIPE_REQUIRE_LIVE` absent. No `sk_live_`/`rk_live_` value present.
+- **Builder shell** `STRIPE_SECRET_KEY` is **present but empty** (length 0); CF token present but Stripe never exposes secret/restricted key values via API, so no live key is reachable here.
+
+No key was fabricated; donate tiers/amounts/labels/copy and the `/version` endpoint were untouched. **AC4 remains blocked solely on one human ops step:** set a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_`) in the Cloudflare Pages `amplifyannarbor` **production** environment and redeploy. Do not re-run the exhausted live-key hunt (iters 17–20); only re-verify and record.
