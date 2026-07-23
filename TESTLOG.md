@@ -64,6 +64,24 @@ unchanged at 1. See
 `docs/evidence/stripe-live-validation/webhook-delivery-status.json`
 → `reverification_2026-07-23_run041743`.
 
+**Re-verification 2026-07-23 (run 050307, iter1):** Fresh independent run.
+Blockers re-checked and unchanged; no live charge/refund/subscription/endpoint
+mutation performed. Process env has **no Stripe key of any kind** (no
+`STRIPE_SECRET_KEY`, no `STRIPE_RESTRICTED_KEY`, no `rk_live_`/`sk_live_`, no
+`STRIPE_WEBHOOK_SECRET`; env scan for `sk_`/`rk_`/`pk_` value prefixes = 0
+matches); `CLOUDFLARE_API_TOKEN` is **invalid** (`GET /user/tokens/verify` →
+HTTP 401, code 1000 `Invalid API Token`); harness provisioning is **off**
+(`RATCHET_PROVISION_ENABLED=false`). Neither BUG-1 (roll webhook secret + set
+Cloudflare Pages `STRIPE_WEBHOOK_SECRET`) nor BUG-2 (provision the tester's
+restricted read key) is builder-reachable. Live checks this iteration: `/`,
+`/donate`, `/donate/success`, `/version` = 200 (serves deployed SHA `d1abc46`,
+matches HEAD); `/api/stripe/webhook-health` = `registered:true`;
+`POST /api/webhooks/stripe` with a bogus signature = **400** and with no
+signature header = **400** (verification still enforced, not disabled).
+Committed-tree scan for real key values = no matches (AC12 clean).
+`evt_1TwC0NLA5oeiO5iDUmzugqyy` `pending_webhooks` unchanged at 1. See
+`webhook-delivery-status.json` → `reverification_2026-07-23_run050307`.
+
 **Re-verification 2026-07-23 (run 043858, iter2):** Blockers re-checked and
 unchanged. `CLOUDFLARE_API_TOKEN` still **invalid** (`GET /user/tokens/verify`
 → HTTP 401, code 1000 `Invalid API Token`); process env still has **no Stripe
