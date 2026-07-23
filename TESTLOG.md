@@ -64,6 +64,22 @@ unchanged at 1. See
 `docs/evidence/stripe-live-validation/webhook-delivery-status.json`
 → `reverification_2026-07-23_run041743`.
 
+**Re-verification 2026-07-23 (run 043858, iter2):** Blockers re-checked and
+unchanged. `CLOUDFLARE_API_TOKEN` still **invalid** (`GET /user/tokens/verify`
+→ HTTP 401, code 1000 `Invalid API Token`); process env still has **no Stripe
+key of any kind**; harness provisioning is **off**
+(`RATCHET_PROVISION_ENABLED=false`, `ENV_FROM_VAULT_COUNT=0`) and the vault
+exposes no Stripe secret (secret-path probes all 404), so neither BUG-1 (roll
+webhook secret + set Cloudflare Pages `STRIPE_WEBHOOK_SECRET`) nor BUG-2
+(provision the tester's restricted read key) is builder-reachable. Live checks
+this iteration: `/`, `/donate`, `/version` = 200 (serves deployed SHA
+`238326f`, matches HEAD); `/api/stripe/webhook-health` = `registered:true`;
+`POST /api/webhooks/stripe` with a bogus signature = **400** (verification still
+enforced, not disabled). Committed-tree scan for real key values = no matches
+(AC12 clean). `evt_1TwC0NLA5oeiO5iDUmzugqyy` `pending_webhooks` unchanged at 1;
+no live charge/refund/subscription/endpoint mutation performed. See
+`webhook-delivery-status.json` → `reverification_2026-07-23_run043858_iter2`.
+
 The endpoint `we_1TwCAALA5oeiO5iDBwdOFWMt` was created *after* the original
 checkout event, so the event was never delivered on the first pass. The builder
 redelivered it via the Stripe retry API
