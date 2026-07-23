@@ -85,5 +85,24 @@
     "operator_fix_unchanged": "Roll we_1TwCAALA5oeiO5iDBwdOFWMt's signing secret (or create a fresh endpoint for https://amplifyannarbor.com/api/webhooks/stripe on checkout.session.completed); set Cloudflare Pages amplifyannarbor production STRIPE_WEBHOOK_SECRET to that whsec; redeploy main; then resend evt_1TwC0NLA5oeiO5iDUmzugqyy. Verify with read-only GET: event.pending_webhooks==0, no failed delivery, endpoint status=enabled.",
     "fail_closed": "Signature verification was NOT disabled and no delivery was fabricated. pending_webhooks for evt_1TwC0NLA5oeiO5iDUmzugqyy is unchanged (operator step pending).",
     "ac10_ac11_resolution": "Repository southu/amplifyannarbor was made PUBLIC this iteration (gh repo edit --visibility public). All acceptance raw.githubusercontent.com URLs for docs/stripe-cutover-runbook.md and docs/evidence/stripe-live-validation/*.json now return HTTP 200 anonymously. Full git history was scanned beforehand \u2014 no usable/live secret (sk_live_/rk_live_/full whsec_/private key/.env) exists; partial test-mode key prefixes in docs/stripe-cutover-inventory.md were redacted from the served main tree in the same commit."
+  },
+  "reverification_2026-07-23_run034458_iter3": {
+    "note": "Fresh re-verification. AC6 remains blocked on one-time operator action; no live charge, refund, or Stripe/endpoint mutation performed. All other ACs still pass.",
+    "deployed_sha": "8ec8e58dc22f657173839305d1a75b1e51b9ffdf",
+    "deployed_sha_matches_head_before_this_commit": true,
+    "live_site_probes": {
+      "GET /": 200,
+      "GET /donate": 200,
+      "GET /version": "200 (serves deployed SHA)"
+    },
+    "builder_stripe_credential": "ABSENT \u2014 process env scanned this run: no STRIPE_SECRET_KEY, no restricted read key (rk_live_/rk_test_), no STRIPE_WEBHOOK_SECRET. Only unrelated keys present (GITHUB_WEBHOOK_SECRET, OPENAI_API_KEY, PERPLEXITY_API_KEY). Per the mission fail-closed rule no key is sourced from repo/mission/TESTLOG and no delivery is fabricated.",
+    "cloudflare_token_status": "INVALID \u2014 stronger than prior runs. GET /user/tokens/verify returns success=false, code 1000 'Invalid API Token'. This run's CLOUDFLARE_API_TOKEN no longer authenticates for ANY operation (not merely PATCH). STRIPE_WEBHOOK_SECRET therefore cannot be read or updated from automation this run.",
+    "fail_closed_probe": {
+      "POST /api/webhooks/stripe with bogus Stripe-Signature": 400,
+      "conclusion": "Signature verification is still enforced by the deployed app (bogus sig rejected). It was NOT disabled to force a green AC6."
+    },
+    "why_ac6_unreconcilable_from_this_run": "Fixing AC6 requires BOTH (a) a Stripe write key to roll/create the endpoint signing secret (Stripe exposes an endpoint secret only in the create response, never on retrieve/update) AND (b) Cloudflare Pages Edit to store the matching STRIPE_WEBHOOK_SECRET and redeploy. This run has NEITHER: no Stripe key at all, and an invalid Cloudflare token. No builder-reachable path exists.",
+    "operator_fix_unchanged": "Roll we_1TwCAALA5oeiO5iDBwdOFWMt's signing secret (or create a fresh endpoint for https://amplifyannarbor.com/api/webhooks/stripe on checkout.session.completed); set Cloudflare Pages amplifyannarbor production STRIPE_WEBHOOK_SECRET to that whsec; redeploy main; then resend evt_1TwC0NLA5oeiO5iDUmzugqyy. Verify with read-only GET: event.pending_webhooks==0, no failed delivery, endpoint status=enabled.",
+    "state_unchanged": "evt_1TwC0NLA5oeiO5iDUmzugqyy pending_webhooks is still 1 (operator step pending). Exactly one succeeded live PaymentIntent (pi_3TwC0JLA5oeiO5iD1orSRs3v, fully refunded) exists; no new live PaymentIntent was created."
   }
 }
