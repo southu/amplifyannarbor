@@ -466,5 +466,31 @@
     "committed_tree_secret_scan": "no (sk|rk)_live_ VALUE anywhere over HEAD (AC12 clean; only prefix references in code/docs).",
     "pending_webhooks": "1 (carried from previously-captured evidence; not re-fetched \u2014 no read key this iteration).",
     "one_charge_rule": "Single validation donation pi_3TwC0JLA5oeiO5iD1orSRs3v (fully refunded) untouched; AC13 no new live charge, no subscription (AC9 one-time tiers only)."
+  },
+  "reverification_2026-07-23_run060610_iter3": {
+    "note": "Run 20260723-060610, iteration 3. BUG-1 (AC6 webhook delivery, evt_1TwC0NLA5oeiO5iDUmzugqyy pending_webhooks=1, reason=signature_secret_mismatch) and BUG-2 (AC3/7/8/13 tester restricted read key) remain one-time operator/harness provisioning actions blocked on Stripe credentials not given to the builder. No live PaymentIntent, refund, subscription, or Stripe/endpoint mutation performed this iteration. Fail-closed.",
+    "probed_at_utc": "2026-07-23T06:06:10Z",
+    "deployed_sha_before_this_commit": "76e34d9c0f70b6d5b8916c33f6ceaa0a5fab1cc0",
+    "deployed_sha_matches_head_before_this_commit": true,
+    "live_site_probes": {
+      "GET /": 200,
+      "GET /donate": 200,
+      "GET /donate/success": 200,
+      "GET /version": 200,
+      "GET /version body": "76e34d9c0f70b6d5b8916c33f6ceaa0a5fab1cc0"
+    },
+    "signature_probe": {
+      "POST /api/webhooks/stripe no-signature": 400,
+      "POST /api/webhooks/stripe bogus-signature": 400,
+      "verification_intact": true,
+      "verification_disabled_to_force_ac6": false
+    },
+    "builder_stripe_credential": "ABSENT — zero STRIPE_* variables set (STRIPE_SECRET_KEY/STRIPE_LIVE_SECRET_KEY/STRIPE_RESTRICTED_READ_KEY/STRIPE_RESTRICTED_KEY/STRIPE_API_KEY/STRIPE_READ_KEY/STRIPE_WEBHOOK_SECRET all empty); no sk_live_/rk_live_/sk_test_/rk_test_/whsec_ key-shaped value anywhere in env; no stripe CLI on PATH. Fail-closed: no key sourced from repo/mission/TESTLOG, no Stripe API call made, no delivery fabricated.",
+    "operator_secret_store": "Ratchet Vault at VAULT_URL=http://127.0.0.1:8379 reachable (/health 200) but LOCKED to the builder: GET /api/items → 401 {\"error\":\"locked\"} (also /api/projects, /api/audit → 401 locked); no unlock session or reveal available, so no rk_live_/sk_live_ retrievable. Bypassing the lock is out of scope under fail-closed. Harness broker injected nothing: RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0.",
+    "provisioning": "DISABLED (RATCHET_PROVISION_ENABLED=false); no builder-reachable path to a live Stripe key.",
+    "cloudflare_token": "PRESENT but INVALID — GET /user/tokens/verify → HTTP 401 (code 1000 Invalid API Token); cannot read or set Cloudflare Pages STRIPE_WEBHOOK_SECRET. Rolling whsec is moot without a Stripe write key anyway.",
+    "committed_tree_secret_scan": "no (sk|rk)_live_ VALUE anywhere over HEAD (AC12 clean; only prefix references in code/docs).",
+    "pending_webhooks": "1 (carried from previously-captured evidence; not re-fetched — no read key this iteration).",
+    "one_charge_rule": "Single validation donation pi_3TwC0JLA5oeiO5iD1orSRs3v (fully refunded) untouched; AC13 no new live charge, no subscription (AC9 one-time tiers only)."
   }
 }

@@ -455,3 +455,53 @@ one-time operator/harness provisioning actions blocked on a Stripe key the
 builder is not given — see the delivery-status JSON marker
 (`reverification_2026-07-23_run060610_iter2`). State unchanged; no new live
 charge exists (AC13).
+
+## Re-verification — run 060610 iter3 (2026-07-23)
+
+**No new live charge, refund, subscription, or Stripe/endpoint mutation this
+iteration.** The single authorized validation donation
+`pi_3TwC0JLA5oeiO5iD1orSRs3v` was created and fully refunded in a prior run; per
+the HARD CONSTRAINT it is verified from existing records only and never
+repeated. Facts verifiable without a Stripe key were re-confirmed live:
+
+- `GET /` → 200; `GET /donate` → 200 (donation form / Stripe checkout entry
+  present); `GET /donate/success` → 200; `GET /version` → 200 (serves `76e34d9`,
+  == local HEAD).
+- **AC9: no recurring tiers.** `/donate` presents one-time amounts only; no
+  `monthly`/`recurring`/`interval` markers. No subscription was or should be
+  created.
+- Signature enforcement intact (NOT disabled to force AC6):
+  `POST /api/webhooks/stripe` with bogus `Stripe-Signature` → 400; with no
+  signature header → 400.
+- **Builder Stripe credential: ABSENT.** Env scanned this iteration — every named
+  var empty (`STRIPE_SECRET_KEY`, `STRIPE_LIVE_SECRET_KEY`,
+  `STRIPE_RESTRICTED_READ_KEY`, `STRIPE_RESTRICTED_KEY`, `STRIPE_API_KEY`,
+  `STRIPE_READ_KEY`, `STRIPE_WEBHOOK_SECRET`); zero `STRIPE_*` vars set; no
+  `(sk|rk|whsec)_(live|test)_` key-shaped value anywhere in env; no `stripe` CLI
+  on PATH. Fail-closed: no key sourced from repo/mission/TESTLOG, no Stripe API
+  call made, no delivery fabricated. AC3/6/7/8/13 read-only GETs cannot be re-run
+  this iteration; those facts stand on previously-captured committed evidence.
+- **Operator secret store probed and LOCKED to the builder.** The Ratchet Vault
+  (`VAULT_URL=http://127.0.0.1:8379`) is reachable (`/health` → 200) but its
+  credential API is sealed to this run: `GET /api/items` → 401 `{"error":
+  "locked"}` (also `/api/projects`, `/api/audit` → 401 locked). No unlock session
+  or reveal is available, so no `rk_live_`/`sk_live_` can be retrieved — and
+  bypassing the lock is out of scope under the fail-closed constraint. The harness
+  broker injected nothing this run: `RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0`,
+  `RATCHET_PROVISION_ENABLED=false`. No builder-reachable path to a live Stripe key.
+- **Cloudflare token — cannot remediate AC6.** `CLOUDFLARE_API_TOKEN` present but
+  `GET /user/tokens/verify` → HTTP 401 `code 1000 Invalid API Token`. A Pages
+  write grant would be moot anyway: rolling `STRIPE_WEBHOOK_SECRET` needs the new
+  `whsec_` value, obtainable only from a Stripe write key (absent).
+- Committed artifacts intact: `docs/stripe-cutover-runbook.md` (cutover steps,
+  key-name/secret-store locations, sandbox rollback, `https://docs.stripe.com/projects`
+  link); evidence JSON under `docs/evidence/stripe-live-validation/` (secrets
+  redacted; `webhook-event.json` still `pending_webhooks=1`,
+  `webhook-delivery-status.json` still `delivered_2xx=false
+  reason=signature_secret_mismatch`). **AC12 clean:** no full `(sk|rk)_live_`
+  key value anywhere in the committed tree (only prefix references in code/docs).
+
+BUG-1 (AC6 webhook delivery) and BUG-2 (AC3/7/8/13 tester read key) remain
+one-time operator/harness provisioning actions blocked on a Stripe key the
+builder is not given; the operator's own secret store is present but locked to
+the builder this run. State unchanged; no new live charge exists (AC13).
