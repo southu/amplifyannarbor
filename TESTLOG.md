@@ -674,3 +674,44 @@ State unchanged; BUG-1 (AC6 webhook `signature_secret_mismatch`) and BUG-2
 (AC3/7/8/13 tester restricted read key) remain one-time operator/harness
 provisioning actions blocked on a Stripe credential the builder is not given; no
 new live charge exists (AC13).
+
+## Run 20260723-071608 — iteration 1 (builder re-verification, fail-closed)
+
+Fresh run/iteration; operator credential blocker **unchanged**. No live charge,
+refund, subscription, or Stripe/endpoint mutation performed this run. The single
+validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v` stays created-and-fully-refunded
+from the earlier run (charge `refunded=true`, refund `pyr_1TwCpqLA5oeiO5iDwP3f3IdN`
+`status=succeeded`, balance txn `net=4825`); the one-charge hard constraint forbids
+any new charge, so I verified from existing records only.
+
+- **Builder Stripe credential: ABSENT.** `env | grep -c '^STRIPE_' == 0`; zero
+  `sk_live_`/`rk_live_`/`whsec_` key-shaped value anywhere in env; no `stripe`
+  CLI on PATH. Fail-closed — no key sourced from repo/mission/TESTLOG.
+- **Operator secret store: LOCKED to builder.** Vault
+  (`VAULT_URL=http://127.0.0.1:8379`) `/health` 200 but `GET /api/items` → 401
+  `{"error":"locked"}`; broker injected 0 secrets
+  (`RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0`, `RATCHET_PROVISION_ENABLED=false`,
+  provider railway). No Stripe live/restricted key obtainable this run.
+- **Live site healthy:** `GET /` `/donate` `/donate/success` `/version` all 200;
+  `/version` body `c29feea8c4365326f56b768816a9f6c8b36e0a0d` == HEAD before this
+  commit. `/donate` carries the Stripe checkout/donate markers (AC2). **AC9:** no
+  recurring/subscription markers — one-time amounts only, no subscription.
+- **Webhook endpoint live:** `GET /api/stripe/webhook-health` →
+  `{"registered":true,"url":".../api/webhooks/stripe","events":["checkout.session.completed"]}`.
+  Signature verification intact: `POST /api/webhooks/stripe` no-sig → 400,
+  bogus-sig → 400 (not disabled to force AC6). Committed evidence still shows
+  `evt_1TwC0NLA5oeiO5iDUmzugqyy` `pending_webhooks=1`, endpoint
+  `we_1TwCAALA5oeiO5iDBwdOFWMt` `status=enabled`, redelivery
+  `reason=signature_secret_mismatch` (BUG-1).
+- **AC12 clean:** length-bounded scan for real key material
+  (`(sk|rk)_live_[A-Za-z0-9]{6,}` / `whsec_[A-Za-z0-9]{16,}`) over the committed
+  tree returns **no matches**; only bare prefix tokens in code/docs and the
+  `whsec_xxx` / `whsec_` placeholders in `.env.example` / `.dev.vars.example`.
+
+State unchanged; BUG-1 (AC6 webhook `signature_secret_mismatch`) and BUG-2
+(AC3/7/8/13 tester restricted read key) remain one-time operator/harness
+provisioning actions blocked on a Stripe credential the builder is not given.
+Fixing AC6 needs the endpoint's `whsec_…` signing secret (Stripe Dashboard live
+write) to set the Pages `STRIPE_WEBHOOK_SECRET`; the builder cannot invent/guess
+it without violating fail-closed, so no CF Pages secret write was attempted. No
+new live charge exists (AC13).
