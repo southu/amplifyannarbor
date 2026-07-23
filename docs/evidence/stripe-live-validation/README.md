@@ -281,3 +281,35 @@ exists and is refunded — verify from existing records only).
 whsec, provide a restricted read key) plus a Cloudflare Pages production secret
 update + redeploy. See `docs/stripe-cutover-runbook.md` and
 `webhook-delivery-status.json` for the exact steps.
+
+### 2026-07-23 — run 083005 iter3 (unchanged: operator blocker)
+
+Fail-closed re-verification; **no state change** from prior runs. No new live
+charge (HARD CONSTRAINT: the single validation donation already exists and is
+refunded — verify from existing records only). No refund, subscription, or any
+Stripe/endpoint mutation this iteration.
+
+- **Credentials:** 0 non-empty `STRIPE_*` env vars; no `sk_live_`/`rk_live_`/`whsec_`
+  key-shaped value anywhere in the environment; no `stripe` CLI on PATH.
+- **Vault:** `VAULT_URL=http://127.0.0.1:8379` `/health` 200 but **LOCKED**
+  (`/api/items` -> 401 `{"error":"locked"}`, `/api/secrets` -> 404);
+  `RATCHET_PROVISION_ENABLED=false`, `RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0`.
+- **BUG-1 (AC6):** still blocked — `evt_1TwC0NLA5oeiO5iDUmzugqyy` stays
+  `pending_webhooks=1` (`reason=signature_secret_mismatch`). Fixing it needs the
+  operator to roll the `we_1TwCA…` signing secret, set the Cloudflare Pages
+  production `STRIPE_WEBHOOK_SECRET` to the new `whsec_…`, redeploy, then resend
+  the event — none of which the builder can do without Stripe write + CF Pages write.
+- **Signature enforcement intact:** production `/api/webhooks/stripe` returns
+  **400** for both missing and bogus `stripe-signature` (verification NOT disabled).
+- **State unchanged:** validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v` remains
+  fully refunded (charge `refunded=true`, refund `succeeded`, balance-transaction
+  net 4825 pending) per the committed evidence JSON.
+- **Live site regression:** `/`, `/donate`, `/donate/success`, `/version` all 200;
+  `/version` body `c0638fd…` matches HEAD before this commit.
+- **AC9:** `/donate` one-time only — no recurring tiers, no subscription test.
+- **AC10/AC11:** runbook + all evidence JSON committed under this directory.
+- **AC12:** no real `sk_live_`/`rk_live_`/`whsec_` key value in the tree (only
+  documented `whsec_xxx` placeholders and prefix/prose references).
+
+**Blocker owner: operator.** See `docs/stripe-cutover-runbook.md` and
+`webhook-delivery-status.json` for the exact one-time fix steps.
