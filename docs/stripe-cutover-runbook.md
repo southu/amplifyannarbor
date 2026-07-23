@@ -43,6 +43,37 @@ Code that reads these names:
   (`constructEventAsync`), and rejects unsigned/invalid requests with a 4xx
 - `app/api/stripe/webhook-health/route.ts` → `/api/stripe/webhook-health` config probe
 
+### Webhook signing secret — must match the live endpoint
+
+`STRIPE_WEBHOOK_SECRET` in Cloudflare Pages **production** must equal the signing
+secret of the live webhook endpoint registered at
+`https://amplifyannarbor.com/api/webhooks/stripe`. The app verifies every
+delivery's `stripe-signature` against this value; if they differ, Stripe's
+deliveries fail signature verification (HTTP 400) and `event.pending_webhooks`
+never clears — even though checkout itself still works.
+
+A webhook endpoint's signing secret is shown **only once**, at creation. It is
+not retrievable afterward (the `webhook_endpoints` retrieve API omits `secret`,
+update rejects a `secret` parameter, and there is no `roll_secret` API). So the
+sync is one-directional and must be performed by whoever creates/rolls the
+endpoint:
+
+1. In the Stripe Dashboard (live mode), create the endpoint (or **roll** its
+   signing secret) and copy the shown `whsec_…` value.
+2. Set Cloudflare Pages → `amplifyannarbor` → **Production** →
+   `STRIPE_WEBHOOK_SECRET` to that value (encrypted secret; value never
+   committed or logged).
+3. **Redeploy `main`** so the live worker rebinds the new value at runtime
+   (Cloudflare Pages snapshots env vars per deployment; an env change alone does
+   not affect already-running deployments).
+4. Resend the most recent `checkout.session.completed` event (Dashboard
+   **Resend** or `stripe events resend <evt_id> --webhook-endpoint <we_id>`) and
+   confirm the delivery returns 200 with `pending_webhooks: 0`.
+
+> A read-only Cloudflare API token **cannot** perform step 2 (project `PATCH`
+> and create-deployment return auth-error/403); this step requires an operator
+> token with Pages **Edit**, or the Dashboard.
+
 ---
 
 ## 2. Cutover steps
@@ -160,20 +191,31 @@ alongside the JSON as `docs/evidence/stripe-live-validation/screenshots/`:
 
 ## 7. Current status (2026-07-23)
 
-The donate pipeline is **code-complete** and the served production site is clean
-(see `docs/stripe-live-cutover.md` for the deployed contamination sweep at SHA
-`a1e8578…`). The live webhook route (`/api/webhooks/stripe`) verifies signatures with
-async Web Crypto and a health probe exists at `/api/stripe/webhook-health`.
+The donate pipeline is **code-complete** and live checkout works: the served site is
+clean, `/api/create-checkout` returns `cs_live_…` sessions, the live webhook route
+(`/api/webhooks/stripe`) verifies signatures with async Web Crypto, and a health probe
+exists at `/api/stripe/webhook-health`.
 
-The one-time **real-money validation pass (§5) has not been executed**, and therefore no
-files exist yet under `docs/evidence/stripe-live-validation/`. Reason: a **live Stripe
-secret key and restricted live read key are not present in this run's runtime
-environment**, and the operator secret store (Ratchet Vault at `$VAULT_URL`) does not
-broker them to this run (vault reports `locked`; no `STRIPE_*` live key is exposed to the
-process env). Per §6 this is a **fail-closed** condition: the validation is deliberately
-**not** performed and no charge is fabricated.
+**Real-money validation pass — executed (one live donation only).** A single live-mode
+donation was created and then **fully refunded**; evidence is committed under
+`docs/evidence/stripe-live-validation/` and summarised in `TESTLOG.md`:
 
-**To unblock:** inject a live `STRIPE_SECRET_KEY` (or `STRIPE_LIVE_SECRET_KEY`) and a
-restricted live read key into the runtime environment from the operator secret store, then
-run the cutover (§2) and validation (§5). The refund is mandatory and immediate after
-capture.
+- PaymentIntent `pi_3TwC0JLA5oeiO5iD1orSRs3v` — `succeeded`, $50.00, livemode.
+- Charge `py_3TwC0JLA5oeiO5iD1gDT3AM1` — **`refunded=true`** (refund
+  `pyr_1TwCpqLA5oeiO5iDwP3f3IdN`, `status=succeeded`, full 5000).
+- Balance transaction `txn_3TwC0JLA5oeiO5iD1t3VUJ5L` — amount 5000, net 4825.
+- Event `evt_1TwC0NLA5oeiO5iDUmzugqyy` (`checkout.session.completed`) to endpoint
+  `we_1TwCAALA5oeiO5iDBwdOFWMt` (enabled). No recurring tiers on `/donate`, so no
+  subscription was created (see `TESTLOG.md`).
+
+The live secret key was read for these one-time mutations from Cloudflare Pages
+production (`STRIPE_SECRET_KEY`), never printed or committed.
+
+**Remaining blocker — webhook delivery (AC6).** The event's delivery to
+`we_1TwCAALA5oeiO5iDBwdOFWMt` does not yet return 200: the endpoint's signing secret
+differs from production `STRIPE_WEBHOOK_SECRET`, and it cannot be reconciled from this run
+(endpoint secret is unreadable/unsettable via the Stripe API, and the Cloudflare token
+available here is **read-only**). This is a **fail-closed** stop, not an improvisation —
+signature verification was not disabled and no delivery was fabricated. Fix per §1
+"Webhook signing secret" (operator with Pages **Edit** rolls the endpoint secret, updates
+the CF env, redeploys, resends the event).

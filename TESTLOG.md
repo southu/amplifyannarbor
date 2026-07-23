@@ -42,21 +42,49 @@ No further live charge has been or will be created.
 No new PaymentIntent or subscription was created. The Stripe live account still
 shows exactly one succeeded validation PaymentIntent for the run.
 
-## Webhook activation note
+## Webhook delivery (AC6) — status and operator blocker
 
 The endpoint `we_1TwCAALA5oeiO5iDBwdOFWMt` was created *after* the original
-checkout event, so the event was never delivered on the first pass. Redelivery
-is performed by the builder via the Stripe retry API (no new charge). For a
-delivery to return HTTP 200 the production app must verify the delivery
-signature with the endpoint's signing secret, which lives **only** in
-Cloudflare Pages production as `STRIPE_WEBHOOK_SECRET`. Deploying the current
-`main` HEAD refreshes that runtime binding on the live worker. Key values are
-never printed, committed, or placed in this log. See
-`docs/stripe-cutover-runbook.md` for the full secret-location map.
+checkout event, so the event was never delivered on the first pass. The builder
+redelivered it via the Stripe retry API
+(`POST /v1/events/{id}/retry?webhook_endpoint=we_…`, HTTP 200, no new charge).
+
+**Delivery is NOT yet returning HTTP 200 — one delivery attempt remains
+pending — because of a signing-secret mismatch that requires operator action.**
+Diagnosis (all live-mode, verified this run):
+
+- The production app verifies signatures with `process.env.STRIPE_WEBHOOK_SECRET`
+  (Cloudflare Pages production). After deploying HEAD, the live worker verifies
+  a request signed with that configured secret with HTTP 200
+  (`{"received":true}`) — proven by a direct signed probe to
+  `/api/webhooks/stripe`.
+- Stripe signs each delivery to `we_1TwCAALA5oeiO5iDBwdOFWMt` with **that
+  endpoint's own signing secret**, which is shown only once at endpoint
+  creation. It is **not** the value currently stored in
+  `STRIPE_WEBHOOK_SECRET`: the endpoint's real deliveries fail signature
+  verification and `event.pending_webhooks` stays at 1.
+- The endpoint secret cannot be reconciled from this run: the Stripe API does
+  not return it (`webhook_endpoints` retrieve omits `secret`), rejects setting
+  it (`Received unknown parameter: secret` on update), and exposes no
+  `roll_secret` endpoint (404). The Cloudflare Pages API token available to this
+  run is **read-only** (project `PATCH` → auth error, create-deployment → 403),
+  so `STRIPE_WEBHOOK_SECRET` cannot be updated from here either.
+
+**Operator remediation (one-time, restores AC6):** in the Stripe Dashboard, roll
+the signing secret of `we_1TwCAALA5oeiO5iDBwdOFWMt` (or create a fresh endpoint
+at `https://amplifyannarbor.com/api/webhooks/stripe`), copy the new `whsec_…`
+value, set Cloudflare Pages **production** `STRIPE_WEBHOOK_SECRET` to it, redeploy
+`main`, then resend `evt_1TwC0NLA5oeiO5iDUmzugqyy` (Dashboard **Resend** or
+`stripe events resend`). Delivery will then verify and return 200. Per the
+mission's fail-closed rule, the builder did **not** disable signature
+verification or fabricate a delivery. Key values are never printed, committed,
+or placed in this log. See `docs/stripe-cutover-runbook.md` §"Webhook signing
+secret" and `docs/evidence/stripe-live-validation/webhook-delivery-status.json`.
 
 ## Evidence
 
 Redacted JSON captured under `docs/evidence/stripe-live-validation/` (payment,
 charge, refund, balance transaction, checkout session, webhook event, webhook
-endpoint). No `sk_live`, `rk_live`, or `whsec_` value appears in any committed
-file; donor PII (name, email, address, card last4) is redacted.
+endpoint, delivery status). No live secret-key value (live secret / restricted /
+webhook-signing prefixes) appears in any committed file; donor PII (name, email,
+address, card last4) is redacted.

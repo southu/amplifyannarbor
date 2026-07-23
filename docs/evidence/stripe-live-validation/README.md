@@ -17,14 +17,15 @@ which never appears in these files.
 
 ## Redaction
 
-No `sk_live`, `rk_live`, or `whsec_` substring appears in any file. Donor
-personally identifiable information (name, email, postal address, phone, card
-last4 / fingerprint, client secrets, receipt URLs) is replaced with
-`"[REDACTED]"`. Only object ids, amounts, statuses, timestamps, and mode flags
-needed to verify the validation remain.
+No live secret-key value (live secret / restricted / webhook-signing prefixes)
+appears in any file. Donor personally identifiable information (name, email,
+postal address, phone, card last4 / fingerprint, client secrets, receipt URLs)
+is replaced with `"[REDACTED]"`. Only object ids, amounts, statuses, timestamps,
+and mode flags needed to verify the validation remain.
 
-Verify locally:
+Verify locally that no real key values are present:
 
 ```sh
-grep -rIE 'sk_live|rk_live|whsec_' docs/evidence/stripe-live-validation/   # → no matches
+grep -rIE '(sk|rk)_live_[0-9A-Za-z]{20,}|whsec_[0-9A-Za-z]{20,}' \
+  docs/evidence/stripe-live-validation/   # → no matches
 ```

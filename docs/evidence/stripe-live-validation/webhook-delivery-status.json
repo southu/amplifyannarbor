@@ -1,0 +1,40 @@
+{
+  "captured_at_utc": "2026-07-23T03:18:00Z",
+  "livemode": true,
+  "event": {
+    "id": "evt_1TwC0NLA5oeiO5iDUmzugqyy",
+    "type": "checkout.session.completed",
+    "for_session": "cs_live_a1iBSmzDg1DBxVR7FW6Y8TlGzSTxjzv5zjzzPTnJYWFrhR8zv8aE2ZdEoc",
+    "pending_webhooks": 1
+  },
+  "endpoint": {
+    "id": "we_1TwCAALA5oeiO5iDBwdOFWMt",
+    "url": "https://amplifyannarbor.com/api/webhooks/stripe",
+    "status": "enabled",
+    "enabled_events": ["checkout.session.completed"],
+    "created_after_event": true
+  },
+  "redelivery": {
+    "method": "POST /v1/events/{id}/retry?webhook_endpoint=we_1TwCAALA5oeiO5iDBwdOFWMt",
+    "retry_api_http_status": 200,
+    "delivered_2xx": false,
+    "reason": "signature_secret_mismatch"
+  },
+  "signature_probe": {
+    "target": "https://amplifyannarbor.com/api/webhooks/stripe",
+    "signed_with": "production STRIPE_WEBHOOK_SECRET (value not disclosed)",
+    "app_http_status": 200,
+    "note": "Deployed app verifies the configured whsec correctly; the live endpoint signs deliveries with a different (unretrievable) secret."
+  },
+  "blocker": {
+    "summary": "we_1TwCAALA5oeiO5iDBwdOFWMt signing secret differs from production STRIPE_WEBHOOK_SECRET; cannot be reconciled from this run.",
+    "api_constraints": [
+      "webhook_endpoints retrieve does not return secret",
+      "webhook_endpoints update rejects 'secret' (unknown parameter)",
+      "no roll_secret endpoint (HTTP 404)",
+      "Cloudflare Pages API token is read-only (project PATCH auth error; create-deployment 403)"
+    ],
+    "operator_fix": "Roll we_X signing secret (or create a new endpoint), set Cloudflare Pages production STRIPE_WEBHOOK_SECRET to the new whsec, redeploy main, then resend evt_1TwC0NLA5oeiO5iDUmzugqyy.",
+    "fail_closed": "Signature verification was NOT disabled and no delivery was fabricated."
+  }
+}
