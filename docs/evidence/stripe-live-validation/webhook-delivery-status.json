@@ -259,5 +259,30 @@
     "operator_fix_unchanged": "Roll we_1TwCAALA5oeiO5iDBwdOFWMt's signing secret (or create a fresh endpoint for https://amplifyannarbor.com/api/webhooks/stripe on checkout.session.completed); set Cloudflare Pages amplifyannarbor production STRIPE_WEBHOOK_SECRET to that whsec; redeploy main; then resend evt_1TwC0NLA5oeiO5iDUmzugqyy. Verify read-only: event.pending_webhooks==0, no failed delivery, endpoint status=enabled.",
     "bug2_tester_read_key": "Still unprovisioned in the TESTER runtime (operator/harness action). Builder cannot inject env into the tester process. Blocks tester re-verification of AC3/7/8/13 from the already-committed records until STRIPE_RESTRICTED_READ_KEY (rk_live_, read-only) is present in the tester environment.",
     "state_unchanged": "No new live PaymentIntent, refund, subscription, or endpoint mutation created this iteration. The single validation donation (pi_3TwC0JLA5oeiO5iD1orSRs3v, fully refunded) and its committed evidence are unchanged."
+  },
+  "reverification_2026-07-23_run050307_iter2": {
+    "note": "Run 20260723-050307, iteration 2. AC6 remains blocked on one-time operator action; no live charge, refund, subscription, or Stripe/endpoint mutation performed. All non-Stripe-dependent facts re-confirmed live this iteration.",
+    "deployed_sha_before_this_commit": "d7c383ca96f5f12d2ab237f640d34f87b08e633d",
+    "deployed_sha_matches_head_before_this_commit": true,
+    "live_site_probes": {
+      "GET /": 200,
+      "GET /donate": 200,
+      "GET /donate/success": 200,
+      "GET /version": "200 (serves deployed SHA d7c383c)",
+      "GET /api/stripe/webhook-health": "200 {registered:true, url:https://amplifyannarbor.com/api/webhooks/stripe, events:[checkout.session.completed]}"
+    },
+    "builder_stripe_credential": "ABSENT — process env scanned this iteration: no STRIPE_* variable is set at all (no STRIPE_SECRET_KEY, no STRIPE_RESTRICTED_KEY/STRIPE_RESTRICTED_READ_KEY, no STRIPE_API_KEY, no rk_live_/sk_live_ read or write key, no STRIPE_WEBHOOK_SECRET). Per the mission fail-closed rule no key is sourced from repo/mission/TESTLOG; the builder makes NO Stripe API call this iteration and fabricates no delivery. Without even a read key, the Stripe read-only GETs cannot be re-run this iteration — pending_webhooks==1 is carried from the previously-captured evidence, not re-fetched.",
+    "provisioning_status": "DISABLED — RATCHET_PROVISION_ENABLED=false, ENV_FROM_VAULT_COUNT unset. No builder-reachable path to a live Stripe key this iteration.",
+    "cloudflare_token_status": "INVALID — CLOUDFLARE_API_TOKEN present but GET /user/tokens/verify returns HTTP 401 success=false code 1000 'Invalid API Token'. Authenticates for no operation, so Cloudflare Pages STRIPE_WEBHOOK_SECRET cannot be read or updated from automation this run.",
+    "fail_closed_probe": {
+      "POST /api/webhooks/stripe with bogus Stripe-Signature": "400 {\"error\":\"Invalid signature\"}",
+      "POST /api/webhooks/stripe with no signature header": "400 {\"error\":\"No signature provided\"}",
+      "conclusion": "Signature verification still enforced by the deployed app (bogus and missing sig both rejected 400). NOT disabled to force a green AC6."
+    },
+    "committed_tree_secret_scan": "git grep for full live key/secret VALUES ((sk|rk)_live_ / whsec_ followed by 20+ token chars) over HEAD tree: no matches (AC12 clean).",
+    "why_ac6_unreconcilable_from_this_run": "Fixing AC6 requires BOTH (a) a Stripe write key to roll/create the endpoint signing secret (secret exposed only in the create response, never on retrieve/update) AND (b) Cloudflare Pages Edit to store the matching STRIPE_WEBHOOK_SECRET and redeploy. This iteration has NEITHER: no Stripe key at all, and an invalid Cloudflare token.",
+    "operator_fix_unchanged": "Roll we_1TwCAALA5oeiO5iDBwdOFWMt's signing secret (or create a fresh endpoint for https://amplifyannarbor.com/api/webhooks/stripe on checkout.session.completed); set Cloudflare Pages amplifyannarbor production STRIPE_WEBHOOK_SECRET to that whsec; redeploy main; then resend evt_1TwC0NLA5oeiO5iDUmzugqyy. Verify read-only: event.pending_webhooks==0, no failed delivery, endpoint status=enabled.",
+    "bug2_tester_read_key": "Still unprovisioned in the TESTER runtime (operator/harness action). Builder cannot inject env into the tester process. Blocks tester re-verification of AC3/7/8/13 from the already-committed records until STRIPE_RESTRICTED_READ_KEY (rk_live_, read-only) is present in the tester environment.",
+    "state_unchanged": "No new live PaymentIntent, refund, subscription, or endpoint mutation created this iteration. The single validation donation (pi_3TwC0JLA5oeiO5iD1orSRs3v, fully refunded) and its committed evidence are unchanged."
   }
 }
