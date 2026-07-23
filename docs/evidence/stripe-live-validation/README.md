@@ -141,3 +141,40 @@ exists and is refunded — verify from existing records only).
 whsec, provide a restricted read key) plus a Cloudflare Pages production secret
 update + redeploy. See `docs/stripe-cutover-runbook.md` and
 `webhook-delivery-status.json` for the exact steps.
+
+### 2026-07-23 — run 073815 iter2 (unchanged: operator blocker)
+
+Fail-closed re-verification; **no state change** from the prior run. No new live
+charge was created (HARD CONSTRAINT: the single validation donation already
+exists and is refunded — verify from existing records only).
+
+- **Credentials:** 0 `STRIPE_*` env names present; all named keys (`STRIPE_SECRET_KEY`,
+  `STRIPE_LIVE_SECRET_KEY`, `STRIPE_RESTRICTED_KEY`, `STRIPE_WEBHOOK_SECRET`, …)
+  unset; zero `sk_live_`/`rk_live_`/`whsec_` key-shaped value anywhere in the
+  environment; no `stripe` CLI on PATH.
+- **Vault:** `/health` 200 but **LOCKED** to builder (`/api/items` → 401);
+  `RATCHET_PROVISION_ENABLED=false`, `RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0`.
+  0 secrets injected.
+- **BUG-2 (AC3/7/8/13):** still blocked — no restricted live read key, so the
+  required live-mode Stripe GETs cannot run this iteration.
+- **BUG-1 (AC6):** still blocked — `evt_1TwC0NLA5oeiO5iDUmzugqyy` stays
+  `pending_webhooks=1` (`reason=signature_secret_mismatch`); cannot roll the
+  endpoint whsec or set the Pages `STRIPE_WEBHOOK_SECRET` without the operator fix.
+- **No mutation this run:** no live charge / refund / subscription / any Stripe
+  write. Validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v` remains fully refunded
+  (charge `refunded=true`, refund `succeeded`, balance-transaction net 4825).
+- **Signature enforcement intact:** production `/api/webhooks/stripe` returns
+  **400** for both missing and bogus `stripe-signature` (verification not disabled).
+- **Webhook registration:** `/api/stripe/webhook-health` reports `registered=true`,
+  `url=/api/webhooks/stripe`, `events=[checkout.session.completed]`.
+- **Live site regression:** `/`, `/donate`, `/donate/success`, `/version` all
+  200; deployed SHA `f16636d` matches HEAD (pre-commit).
+- **AC9:** `/donate` is one-time only — no recurring tiers, no subscription test.
+- **AC10/AC11:** runbook + all evidence JSON committed under this directory.
+- **AC12:** length-bounded scan (`git grep '(sk_live_|rk_live_|whsec_)[A-Za-z0-9]{12,}'`)
+  finds no real live/whsec key value in the tree.
+
+**Blocker owner: operator.** Both bugs need Stripe dashboard write access (roll
+whsec, provide a restricted read key) plus a Cloudflare Pages production secret
+update + redeploy. See `docs/stripe-cutover-runbook.md` and
+`webhook-delivery-status.json` for the exact steps.
