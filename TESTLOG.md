@@ -598,3 +598,33 @@ BUG-1 (AC6 webhook delivery, `evt_1TwC0NLA5oeiO5iDUmzugqyy` `pending_webhooks=1`
 key) remain one-time operator/harness provisioning actions blocked on a Stripe
 credential the builder is not given. State unchanged; no new live charge exists
 (AC13).
+
+## Run 20260723-065304 — iteration 2 (builder re-verification, fail-closed)
+
+Re-checked this iteration; the operator blocker is unchanged. No live charge,
+refund, subscription, or Stripe/endpoint mutation performed (the one validation
+donation `pi_3TwC0JLA5oeiO5iD1orSRs3v` stays created-and-fully-refunded from the
+earlier run; the one-charge hard constraint forbids any new charge).
+
+- **Builder Stripe credential: ABSENT.** No non-empty `STRIPE_*` variable; zero
+  `sk_live_`/`rk_live_`/`whsec_` key-shaped value anywhere in env; no `stripe`
+  CLI on PATH. Fail-closed — no key sourced from repo/mission/TESTLOG.
+- **Operator secret store: LOCKED to builder.** Vault
+  (`VAULT_URL=http://127.0.0.1:8379`) `/health` 200 but `GET /api/items` → 401
+  `{"error":"locked"}`; broker injected 0 secrets
+  (`RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0`).
+- **Cloudflare token: PRESENT but INVALID** (`/user/tokens/verify` → 401 code
+  1000 `Invalid API Token`); cannot read/set the Pages `STRIPE_WEBHOOK_SECRET`
+  (moot without a Stripe write key anyway).
+- **Live site healthy:** `GET /` `/donate` `/donate/success` `/version` all 200;
+  `/version` body `81fa22f75386e55cda7ca889a4d2ba0b4908e90a` == HEAD before this
+  commit. `/donate` carries the Stripe checkout/donate markers (AC2). **AC9:** no
+  recurring/subscription markers — one-time amounts only, no subscription.
+- **Signature verification intact:** `POST /api/webhooks/stripe` with no
+  signature → 400 and with a bogus signature → 400 (not disabled to force AC6).
+- **AC12 clean:** no full `(sk|rk)_live_`/`whsec_` key value anywhere in the
+  committed tree (only prefix references in code/docs and placeholder
+  `whsec_xxx` in `.env.example`).
+
+State unchanged; BUG-1 and BUG-2 remain one-time operator/harness provisioning
+actions; no new live charge exists (AC13).
