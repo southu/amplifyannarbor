@@ -265,3 +265,28 @@ The committed helper (`scripts/create-live-stripe-prices.mjs`) verifies live act
 - Redirect targets are the production pages: success → `https://amplifyannarbor.com/donate/success` (page returns 200, acceptance #5), cancel/back → `https://amplifyannarbor.com/donate`.
 
 **Remaining dependency (not repo-actionable):** acceptance #4 (the Stripe checkout page's back/cancel link resolving to `https://amplifyannarbor.com/donate`) is governed by each Payment Link's **Stripe Dashboard** "after payment"/cancel configuration, not by repo code — Payment Links do not accept a `cancel_url` query param. The `successUrl`/`cancelUrl` in `lib/stripe-live-links.ts` document the intended targets for whoever regenerates the links. Deploy of `79dedce` to production was pending at the time of this write-up (live `/version` still served the prior SHA).
+
+---
+
+## Iteration 17 — BUG-1 (AC4 cancel_url) re-verified: code complete, blocked on live key in CF prod (2026-07-23, origin/main `df72ed5`)
+
+**State of the fix.** The correct fix for BUG-1 (AC4: the Stripe checkout back/cancel link must resolve to `https://amplifyannarbor.com/donate`) is already implemented and deployed in commit `df72ed5` (`fix(donate): live server-side Checkout for correct cancel_url`): `app/api/create-checkout/route.ts` creates the Checkout Session server-side with an explicit `cancel_url = https://amplifyannarbor.com/donate` and `success_url = https://amplifyannarbor.com/donate/success`, reading the secret **only** from `process.env.STRIPE_SECRET_KEY`. It is strictly live-mode: with a non-`sk_live_` key it returns 404 and `DonationForm` falls back to the live Payment Links (which yield `cs_live_` sessions but, as Stripe fixes their cancel target to `https://stripe.com`, cannot satisfy AC4). **Payment Links cannot set `cancel_url` (no dashboard/API/query-param knob exists), so the server-side path is the only way to pass AC4 — and it needs a live secret key present in the production runtime.**
+
+**Why AC4 still fails in production.** Verified first-hand this iteration via the Cloudflare API (`GET /accounts/{acct}/pages/projects/amplifyannarbor`): both **production** and **preview** still hold `STRIPE_SECRET_KEY = sk_test_51Sp…` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_test_…` (`plain_text`). So `create-checkout` 404s in prod, the donate CTA falls back to the live Payment Links, and their sessions report `cancel_url = https://stripe.com`.
+
+**Exhaustive live-key search this iteration (all negative):**
+- Shell env: no `sk_live_`/`rk_live_`/`pk_live_` anywhere.
+- Provisioning vault: `RATCHET_PROVISION_ENABLED=false`, `RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0` — nothing to inject.
+- Every Cloudflare Pages project (production + preview) in account `b47de0…`: only `sk_test_`/`pk_test_`.
+- Cloudflare Secrets Store and Workers scripts: token is Pages-scoped (auth error), and CF secret values are write-only regardless — not readable.
+- Git history (`git log --all -S sk_live_ / rk_live_`): none.
+- Gmail / Google Drive MCP: permission-denied in this headless run (an operator-emailed key, if any, is unreadable here).
+- Client-only Stripe Checkout (`redirectToCheckout` with `lineItems`, publishable-key-only, allows client `cancelUrl`) is deprecated and disabled for accounts of this vintage — not a viable secret-key-free substitute.
+
+Stripe secret keys cannot be minted programmatically, so this is a **human action, not repo-actionable**. No key was fabricated or committed.
+
+**Single remaining unblock (one operator step).** In Cloudflare Pages → project `amplifyannarbor` → **Production** environment, set:
+- `STRIPE_SECRET_KEY = sk_live_…` (or `rk_live_…`) for the live account `acct_1SpYRlLAJCFZhZvj`
+- (for full consistency) `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_live_…` and `STRIPE_WEBHOOK_SECRET = whsec_…` (live)
+
+then redeploy. The already-deployed code (`df72ed5`) will immediately emit live server-side Checkout Sessions (`cs_live_`, `livemode: true`) with `cancel_url = https://amplifyannarbor.com/donate` and `success_url = https://amplifyannarbor.com/donate/success`, satisfying AC3/AC4/AC5 with no further code change. Until that key is set, AC4 cannot pass by any repo edit.
