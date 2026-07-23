@@ -319,3 +319,16 @@ So the live Payment Link session is genuinely live (`cs_live_`, AC3 ✅) but its
 - **No test identifier ships to production assets:** grep of `app`/`components`/`lib`/`public` for `buy.stripe.com/test_`/`pk_test_`/`cs_test_` is clean (AC2/AC6 ✅).
 
 No key was fabricated; the donate tiers/amounts/labels/copy and the `/version` endpoint were untouched. **AC4 remains blocked solely on one human step:** set a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_`) in the Cloudflare Pages `amplifyannarbor` **production** environment and redeploy — the unchanged code then emits `cs_live_` sessions with `cancel_url = https://amplifyannarbor.com/donate`, satisfying AC3/AC4/AC5 with no further code change.
+
+---
+
+## Iteration 20 — AC4 blocker re-confirmed first-hand; no repo-actionable change remains (2026-07-23, live SHA `f4506f6`)
+
+**No AC4 code change is possible this iteration — re-verified end-to-end.** The server-side live-Checkout route (explicit `cancel_url = https://amplifyannarbor.com/donate`, `success_url = https://amplifyannarbor.com/donate/success`, accepts `sk_live_` **or** `rk_live_`, else 404) already ships at HEAD `f4506f6`. It activates the instant a live key exists in the production runtime; until then it 404s and the donate CTA falls back to the seven live Payment Links, whose cancel target Stripe fixes to `https://stripe.com` (Payment Links expose no cancel-URL knob).
+
+**First-hand findings this iteration:**
+- **Live prod:** `/version` = `f4506f6cd925a5328160a333cbd34fba55ae54ab` (= local `HEAD`); `/donate` → 200 with **zero** `buy.stripe.com/test_` and **zero** `pk_test_` in served source; `POST /api/create-checkout` → **HTTP 404** (live-only guard rejecting the deployed test key).
+- **Cloudflare API read** (run `CLOUDFLARE_API_TOKEN`) of Pages project `amplifyannarbor`, account `b47de08648f32ced256b0dcecb06d4e5`, **production** env: `STRIPE_SECRET_KEY = sk_test_…` (`plain_text`), `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_test_…` (`plain_text`), `STRIPE_REQUIRE_LIVE` absent. No `sk_live_`/`rk_live_` value present.
+- **Builder shell** `STRIPE_SECRET_KEY` is **UNSET**; CF token present but Stripe never exposes secret/restricted key values via API, so no live key is reachable here.
+
+No key was fabricated; donate tiers/amounts/labels/copy and the `/version` endpoint were untouched. **AC4 remains blocked solely on one human ops step:** set a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_`) in the Cloudflare Pages `amplifyannarbor` **production** environment and redeploy — the unchanged code then emits `cs_live_` sessions with `cancel_url = https://amplifyannarbor.com/donate`, satisfying AC3/AC4/AC5 with no further code change. Do not re-run the exhausted live-key hunt (iters 17–19); only re-verify and record.
