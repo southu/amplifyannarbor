@@ -44,7 +44,7 @@ shows exactly one succeeded validation PaymentIntent for the run.
 
 ## Webhook delivery (AC6) — status and operator blocker
 
-**Re-verification 2026-07-23 (run 041743):** AC6 still blocked on one-time
+**Re-verification 2026-07-23 (run 041743, iter2):** AC6 still blocked on one-time
 operator action; no live charge/refund/endpoint mutation performed. The process
 env contains **no Stripe key of any kind** (no `STRIPE_SECRET_KEY`, no
 `STRIPE_RESTRICTED_KEY`, no `rk_live_`/`sk_live_`, no `STRIPE_WEBHOOK_SECRET`),
