@@ -290,3 +290,17 @@ Stripe secret keys cannot be minted programmatically, so this is a **human actio
 - (for full consistency) `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_live_…` and `STRIPE_WEBHOOK_SECRET = whsec_…` (live)
 
 then redeploy. The already-deployed code (`df72ed5`) will immediately emit live server-side Checkout Sessions (`cs_live_`, `livemode: true`) with `cancel_url = https://amplifyannarbor.com/donate` and `success_url = https://amplifyannarbor.com/donate/success`, satisfying AC3/AC4/AC5 with no further code change. Until that key is set, AC4 cannot pass by any repo edit.
+
+---
+
+## Iteration 18 — accept restricted live keys (`rk_live_`); AC4 blocker re-confirmed first-hand (2026-07-23)
+
+**Code change this iteration (`app/api/create-checkout/route.ts`).** `isLiveSecret()` previously accepted only a full secret key (`sk_live_`). It now also accepts a **restricted live key (`rk_live_`)** — the safer, more likely credential an operator provisions (a restricted key scoped to Checkout Session creation authenticates the same live `POST /v1/checkout/sessions` call). Without this, a `rk_live_` key set in CF prod would have been rejected as "not live", the donate CTA would fall back to Payment Links, and AC4 would stay broken despite a live key being present. Test-mode (`sk_test_`/`rk_test_`) and publishable (`pk_*`) keys are still rejected. `next build` + `tsc --noEmit` both exit 0; donate tiers/amounts/labels/copy and `/version` untouched; no test-mode identifier ships to production page source.
+
+**AC4 blocker re-confirmed first-hand (no secret key needed — the mission repro).** Probed the live $10 Payment Link:
+1. `GET merchant-ui-api.stripe.com/payment-links/6oUcN62KSaoIc3acMofnO00` → `key = pk_live_51S…`, `id = plink_1Tw9OnLA5oeiO5iDNrhxXXog`, `merchant = acct_1SpYReLA5oeiO5iD`.
+2. `POST api.stripe.com/v1/payment_pages/for_plink` (publishable key) → `ppage_1TwANhLA5oeiO5iDQBoZHChA`, **`livemode: true`**, **`cancel_url = https://stripe.com`**, `success_url = https://amplifyannarbor.com/donate/success`.
+
+So the live Payment Link session is genuinely live (`cs_live_`, AC3 ✅) but its back/cancel target is Stripe's default `https://stripe.com` (AC4 ✗). Payment Links expose **no** cancel-URL knob (no field on the plink, no query param, no `payment_pages` writeable path — `return_url` is null and read-only here), so the server-side Checkout path (which sets `cancel_url` explicitly) remains the only way to satisfy AC4.
+
+**Blocker unchanged.** CF `amplifyannarbor` **production** + **preview** still hold `STRIPE_SECRET_KEY = sk_test_51S…` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_test_51S…` (`plain_text`, read via CF API this iteration). No `sk_live_`/`rk_live_` value exists in the CF env, runner shell env, provisioning vault (`RATCHET_PROVISION_ENABLED=false`, vault count 0), repo tree, or git history. Stripe never exposes a secret/restricted key via API (Dashboard/CLI login only), so this is a human step. The single operator action above (now satisfiable with **either** an `sk_live_` **or** an `rk_live_` key) is all that's left.

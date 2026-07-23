@@ -14,7 +14,8 @@ export const runtime = "edge";
  *
  * Secret handling: the Stripe secret key is read ONLY from the
  * STRIPE_SECRET_KEY environment variable — never hardcoded. This endpoint is
- * strictly live-mode: if no live secret key (sk_live_) is configured it
+ * strictly live-mode: if no live key (a full sk_live_ secret key OR a
+ * restricted rk_live_ key scoped to Checkout Sessions) is configured it
  * responds 404, so production never advertises a non-live payment surface.
  * When that happens the client transparently falls back to the live Payment
  * Links, so the donate flow keeps working. Once a live key is present in the
@@ -38,8 +39,16 @@ const LIVE_PRICE_BY_AMOUNT: Record<number, string> = {
   500: "price_1Tw7WMLA5oeiO5iDqWd9SyMu",
 };
 
+// A live-mode server key: either a full secret key (sk_live_) or a restricted
+// key (rk_live_) scoped to Checkout Session creation. Both authenticate live
+// Stripe API calls; a restricted key is the safer credential an operator is
+// likely to provision, so accept it too. Test-mode keys (sk_test_/rk_test_)
+// and publishable keys (pk_*) are intentionally rejected.
 function isLiveSecret(key: string | undefined): key is string {
-  return typeof key === "string" && key.startsWith("sk_live_");
+  return (
+    typeof key === "string" &&
+    (key.startsWith("sk_live_") || key.startsWith("rk_live_"))
+  );
 }
 
 export async function POST(req: NextRequest) {
