@@ -574,5 +574,33 @@
     "committed_tree_secret_scan": "git grep for (sk|rk)_live_ / whsec_ followed by 8+ token chars over HEAD tree: no matches (AC12 clean; only prefix references in code/docs).",
     "pending_webhooks": "1 (carried from previously-captured evidence; not re-fetched — no read key this iteration).",
     "one_charge_rule": "Single validation donation pi_3TwC0JLA5oeiO5iD1orSRs3v (fully refunded) untouched; AC13 no new live charge, no subscription (AC9 one-time tiers only)."
+  },
+  "reverification_2026-07-23_run065304_iter1": {
+    "note": "Run 20260723-065304, iteration 1 (fresh run; shared TESTLOG reset, repo carries prior evidence). Validation donation pi_3TwC0JLA5oeiO5iD1orSRs3v was created + fully refunded in an earlier run when a live key was available; per the one-charge hard constraint this iteration verifies from existing records only and creates NO new charge. BUG-1 (AC6 webhook delivery, evt_1TwC0NLA5oeiO5iDUmzugqyy pending_webhooks=1, reason=signature_secret_mismatch) and BUG-2 (AC3/7/8/13 tester restricted read key) remain one-time operator/harness provisioning actions blocked on Stripe credentials never given to the builder. No live PaymentIntent, refund, subscription, or Stripe/endpoint mutation performed this iteration. Fail-closed.",
+    "probed_at_utc": "2026-07-23T06:55:10Z",
+    "deployed_sha_before_this_commit": "abb4ffffc706908b4e0055d944d0317a50b234be",
+    "deployed_sha_matches_head_before_this_commit": true,
+    "live_site_probes": {
+      "GET /": 200,
+      "GET /donate": 200,
+      "GET /donate/success": 200,
+      "GET /version": 200,
+      "GET /version body": "abb4ffffc706908b4e0055d944d0317a50b234be"
+    },
+    "donate_form_check_ac2": "GET /donate (52876 bytes) page source contains Stripe checkout/donate markers (donate x35, stripe x15, payment) — checkout entry point present.",
+    "signature_probe": {
+      "POST /api/webhooks/stripe no-signature": 400,
+      "POST /api/webhooks/stripe bogus-signature": 400,
+      "verification_intact": true,
+      "verification_disabled_to_force_ac6": false
+    },
+    "recurring_tiers": "NONE — /donate presents one-time amounts only; zero recurring/monthly/subscription/interval markers (AC9 satisfied by recorded fact; no subscription created).",
+    "builder_stripe_credential": "ABSENT — zero non-empty STRIPE_* variables (no STRIPE_SECRET_KEY/STRIPE_LIVE_SECRET_KEY/STRIPE_RESTRICTED_KEY/STRIPE_READ_KEY/STRIPE_API_KEY/STRIPE_WEBHOOK_SECRET value); zero sk_live_/rk_live_/whsec_ key-shaped values anywhere in env; no stripe CLI on PATH. Fail-closed: no key sourced from repo/mission/TESTLOG, no Stripe API call made, no delivery fabricated.",
+    "operator_secret_store": "Ratchet Vault at VAULT_URL=http://127.0.0.1:8379 reachable (/health 200: ok=true, unlocked=false, global_access_enabled=true, broker_api=true, active_leases=2) but LOCKED to the builder: GET /api/items -> 401 {\"error\":\"locked\"}. Broker fetch probed this iteration: POST /api/broker/fetch {key:STRIPE_SECRET_KEY} -> HTTP 404; broker injected 0 secrets; RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0. No rk_live_/sk_live_ retrievable; bypassing the lock is out of scope under fail-closed.",
+    "provisioning": "DISABLED — RATCHET_PROVISION_ENABLED=false, provider=railway, ENV_FROM_VAULT_COUNT=0. No builder-reachable path to a live Stripe key.",
+    "cloudflare_token": "PRESENT (CLOUDFLARE_API_TOKEN set) but INVALID — GET /user/tokens/verify -> HTTP 401; cannot read or set Cloudflare Pages STRIPE_WEBHOOK_SECRET. Rolling whsec is moot without a Stripe write key anyway.",
+    "committed_tree_secret_scan": "git grep for (sk|rk)_live_ / whsec_ followed by real token chars over HEAD tree: no key VALUES (AC12 clean; only prefix references in code/docs/TESTLOG and placeholder whsec_xxx in .env.example).",
+    "pending_webhooks": "1 (carried from previously-captured evidence; not re-fetched — no read key this iteration).",
+    "one_charge_rule": "Single validation donation pi_3TwC0JLA5oeiO5iD1orSRs3v (fully refunded) untouched; AC13 no new live charge, no subscription (AC9 one-time tiers only)."
   }
 }

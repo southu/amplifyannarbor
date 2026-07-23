@@ -556,3 +556,45 @@ BUG-1 (AC6 webhook delivery) and BUG-2 (AC3/7/8/13 tester read key) remain
 one-time operator/harness provisioning actions blocked on a Stripe key the
 builder is not given; the operator's own secret store is present but locked to
 the builder this run. State unchanged; no new live charge exists (AC13).
+
+---
+
+## Run 20260723-065304 — iteration 1 (builder re-verification, fail-closed)
+
+Fresh run (shared TESTLOG reset; repo carries the prior evidence + runbook).
+The one validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v` was created and fully
+refunded in an earlier run when a live key was briefly available; per the
+one-charge hard constraint this iteration verifies from existing records only
+and creates **no** new charge, refund, subscription, or Stripe/endpoint
+mutation.
+
+- **Builder Stripe credential: ABSENT.** No non-empty `STRIPE_*` variable
+  (`STRIPE_SECRET_KEY`/`STRIPE_LIVE_SECRET_KEY`/`STRIPE_RESTRICTED_KEY`/
+  `STRIPE_READ_KEY`/`STRIPE_API_KEY`/`STRIPE_WEBHOOK_SECRET`); no
+  `sk_live_`/`rk_live_`/`whsec_` key-shaped value anywhere in env; no `stripe`
+  CLI on PATH. Fail-closed — no key sourced from repo/mission/TESTLOG.
+- **Operator secret store: LOCKED to builder.** Ratchet Vault
+  (`VAULT_URL=http://127.0.0.1:8379`) `/health` 200 (`unlocked=false`,
+  `broker_api=true`) but `GET /api/items` → 401 `{"error":"locked"}`;
+  `POST /api/broker/fetch {STRIPE_SECRET_KEY}` → 404; broker injected 0 secrets
+  (`RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0`).
+- **Provisioning: DISABLED** (`RATCHET_PROVISION_ENABLED=false`).
+- **Cloudflare token: PRESENT but INVALID** (`/user/tokens/verify` → 401);
+  cannot read/set the Pages `STRIPE_WEBHOOK_SECRET` (moot without a Stripe write
+  key).
+- **Live site healthy:** `GET /` `/donate` `/donate/success` `/version` all 200;
+  `/version` body `abb4ffffc706908b4e0055d944d0317a50b234be` == HEAD before this
+  commit. `/donate` (52,876 bytes) carries the Stripe checkout/donate markers
+  (AC2). **AC9:** no recurring/monthly/subscription markers — one-time amounts
+  only, no subscription created.
+- **Signature verification intact:** `POST /api/webhooks/stripe` with no
+  signature → 400 and with a bogus signature → 400 (not disabled to force AC6).
+- **AC12 clean:** no full `(sk|rk)_live_`/`whsec_` key value anywhere in the
+  committed tree (only prefix references in code/docs and placeholder
+  `whsec_xxx` in `.env.example`).
+
+BUG-1 (AC6 webhook delivery, `evt_1TwC0NLA5oeiO5iDUmzugqyy` `pending_webhooks=1`,
+`reason=signature_secret_mismatch`) and BUG-2 (AC3/7/8/13 tester restricted read
+key) remain one-time operator/harness provisioning actions blocked on a Stripe
+credential the builder is not given. State unchanged; no new live charge exists
+(AC13).
