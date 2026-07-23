@@ -36,6 +36,36 @@ Each builder iteration re-checks the live state without creating any new live
 charge (the one authorized validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v`
 was already created and fully refunded). Entries are newest-first.
 
+### 2026-07-23 — run 081615 iter1 (unchanged: operator blocker)
+
+Fresh run/iteration; fail-closed re-verification with **no state change**. No
+live charge, refund, subscription, or any Stripe/endpoint write performed — the
+one authorized validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v` stays
+created-and-fully-refunded, so per the one-charge hard constraint this iteration
+verified from existing records only.
+
+- **Builder Stripe credential: ABSENT.** `env | grep -c '^STRIPE_' == 0`; zero
+  `sk_live_`/`rk_live_`/`whsec_` key-shaped value anywhere in env; no `stripe`
+  CLI on PATH. No key sourced from mission/repo/TESTLOG (fail-closed).
+- **Operator secret store: LOCKED.** Vault `/health` 200 but `/api/items` → 401
+  `{"error":"locked"}`; `RATCHET_PROVISION_ENABLED=false`,
+  `RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0` (0 secrets injected).
+- **BUG-2 (AC3/7/8/13):** still blocked — no restricted live read key, so the
+  tester's live-mode Stripe GETs cannot run.
+- **BUG-1 (AC6):** still blocked — `evt_1TwC0NLA5oeiO5iDUmzugqyy` stays
+  `pending_webhooks=1` (`signature_secret_mismatch`); closing it needs the
+  operator to set the endpoint `whsec_…` as the Pages `STRIPE_WEBHOOK_SECRET`.
+- **Live site regression:** `/`, `/donate`, `/donate/success`, `/version` all
+  **200**; `/version` body `05a4b48…` == HEAD (pre-commit). `/donate` one-time
+  only (AC9: no recurring tiers).
+- **AC12 clean:** `git grep '(sk|rk)_live_[A-Za-z0-9]{6,}|whsec_[A-Za-z0-9]{16,}'`
+  over the committed tree (excluding `*.example`) returns no matches.
+- **Evidence intact (AC10/11):** runbook + all evidence JSON present; refund
+  `pyr_1TwCpqLA5oeiO5iDwP3f3IdN` `status=succeeded`, balance-txn `net=4825`.
+
+**Blocker owner: operator.** Unchanged from run 073815. See
+`docs/stripe-cutover-runbook.md` and `webhook-delivery-status.json`.
+
 ### 2026-07-23 — run 071608 iter3 (unchanged: operator blocker; final iteration)
 
 Fail-closed re-verification; **no state change** from iter1/iter2. This is the
