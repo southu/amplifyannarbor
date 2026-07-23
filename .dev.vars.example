@@ -1,0 +1,13 @@
+# Local development secrets for `wrangler pages dev` (git-ignored: copy to .dev.vars).
+#
+# Use ONLY Stripe TEST-MODE values locally. The live signing secret lives only
+# in the Cloudflare Pages production secret store and must never be committed.
+#
+# Local webhook testing with the Stripe CLI:
+#   stripe listen --forward-to http://localhost:8788/api/webhooks/stripe
+# The CLI prints a `whsec_...` test signing secret — put it here so the local
+# handler can verify forwarded test events:
+STRIPE_WEBHOOK_SECRET=whsec_your_test_cli_signing_secret
+
+# Test-mode secret key for any server-side Stripe calls in local dev.
+STRIPE_SECRET_KEY=sk_test_xxx

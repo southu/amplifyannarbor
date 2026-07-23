@@ -4,10 +4,17 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "edge";
 
+// Web Crypto (SubtleCrypto) HMAC provider — required to verify Stripe
+// signatures on the Cloudflare Workers runtime, where the synchronous
+// Node-crypto path used by constructEvent() is unavailable. We construct it
+// lazily so a missing key never crashes module init.
+const cryptoProvider = Stripe.createSubtleCryptoProvider();
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
+  // Reject unsigned requests before any side effects (4xx, never 2xx).
   if (!signature) {
     return NextResponse.json(
       { error: "No signature provided" },
@@ -15,15 +22,35 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  // Without a configured signing secret we cannot verify anything, so reject
+  // rather than process the payload. This is a 4xx (client/config) response and
+  // triggers no downstream side effects.
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET is not configured");
+    return NextResponse.json(
+      { error: "Webhook not configured" },
+      { status: 400 }
+    );
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_placeholder", {
     apiVersion: "2025-12-15.clover",
   });
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-  let event;
+  let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    // Async Web Crypto verification (constructEventAsync) so signature checks
+    // work on the Cloudflare Workers runtime. An invalid or forged signature
+    // throws here and is rejected with a 4xx below — no side effects run.
+    event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      webhookSecret,
+      undefined,
+      cryptoProvider
+    );
   } catch (error) {
     console.error("Webhook signature verification failed:", error);
     return NextResponse.json(
