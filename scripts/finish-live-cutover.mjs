@@ -38,6 +38,7 @@
  */
 
 const DRY_RUN = process.argv.includes("--dry-run");
+const STATUS_ONLY = process.argv.includes("--status");
 const PROJECT = "amplifyannarbor";
 const SITE = "https://amplifyannarbor.com";
 const EXPECT_CANCEL = "https://amplifyannarbor.com/donate";
@@ -58,6 +59,59 @@ function isLiveSecret(k) {
 function looksSecret(k) {
   // any Stripe secret/restricted key, live or test — used only to give a precise error
   return typeof k === "string" && /^(sk|rk)_(live|test)_/.test(k);
+}
+
+// --- 0. Read-only status: diagnose the AC4 blocker without any key ------------
+// `--status` needs no Stripe key. It reports (a) what STRIPE_SECRET_KEY key
+// TYPE is currently live in Cloudflare Pages production, and (b) whether
+// POST /api/create-checkout is serving a live (cs_live_) session yet. It never
+// prints a full secret — only the key prefix (sk_test_ / sk_live_ / rk_live_).
+if (STATUS_ONLY) {
+  const token = (process.env.CLOUDFLARE_API_TOKEN || "").trim();
+  const account = (process.env.CLOUDFLARE_ACCOUNT_ID || "").trim();
+  const summarizeKey = (v) => {
+    if (typeof v !== "string" || !v) return "(unset)";
+    const m = v.match(/^(sk|rk|pk)_(live|test)_/);
+    return m ? `${m[0]} (${v.length} chars)` : `(non-standard, ${v.length} chars)`;
+  };
+  await (async () => {
+    if (token && account) {
+      try {
+        const res = await fetch(
+          `${CF_API}/accounts/${account}/pages/projects/${PROJECT}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const json = await res.json();
+        const ev =
+          json?.result?.deployment_configs?.production?.env_vars || {};
+        const sk = ev.STRIPE_SECRET_KEY?.value;
+        console.log(`CF prod STRIPE_SECRET_KEY: ${summarizeKey(sk)}`);
+        if (isLiveSecret(sk)) ok("CF prod key is LIVE — AC4 unblocked once deployed.");
+        else console.log("→ AC4 BLOCKED: CF prod key is not live. Provide a live key and run this script without --status.");
+      } catch (e) {
+        console.warn(`(could not read CF env: ${e.message})`);
+      }
+    } else {
+      console.log("(CLOUDFLARE_API_TOKEN/ACCOUNT_ID not set — skipping CF env read)");
+    }
+    // Probe the live endpoint from the public internet.
+    try {
+      const res = await fetch(`${SITE}/api/create-checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: 50, name: "status probe", email: "verify@example.com", custom: false }),
+      });
+      const body = await res.json().catch(() => ({}));
+      const url = typeof body.url === "string" ? body.url : "";
+      if (res.status === 404) console.log("create-checkout: HTTP 404 (live path inactive → client uses Payment Links, whose cancel_url is https://stripe.com → AC4 fails).");
+      else if (url.includes("cs_live_")) ok("create-checkout: serving a LIVE session (cs_live_) — AC4 should pass.");
+      else console.log(`create-checkout: HTTP ${res.status}, url=${url ? url.slice(0, 40) : "(none)"}`);
+    } catch (e) {
+      console.warn(`(create-checkout probe failed: ${e.message})`);
+    }
+  })();
+  // Status is read-only; the key-required provisioning logic below never runs.
+  process.exit(0);
 }
 
 // --- 1. Resolve the live secret key from env (never argv) --------------------
