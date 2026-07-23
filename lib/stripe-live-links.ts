@@ -9,14 +9,14 @@
 export const STRIPE_LIVE_LINKS = {
   mode: "live" as const,
   byAmount: {
-    10: "https://donate.stripe.com/6oUcN62KSaoIc3acMofnO00",
-    25: "https://donate.stripe.com/fZu14o0CKaoIffmaEgfnO01",
-    50: "https://donate.stripe.com/7sYeVe4T068sebi27KfnO02",
-    100: "https://donate.stripe.com/aFa5kE2KSgN67MU4fSfnO03",
-    250: "https://donate.stripe.com/8x2bJ21GO7cw3wE13GfnO04",
-    500: "https://donate.stripe.com/dRm9AU4T00O8gjqeUwfnO05",
+    10: "https://buy.stripe.com/6oUcN62KSaoIc3acMofnO00",
+    25: "https://buy.stripe.com/fZu14o0CKaoIffmaEgfnO01",
+    50: "https://buy.stripe.com/7sYeVe4T068sebi27KfnO02",
+    100: "https://buy.stripe.com/aFa5kE2KSgN67MU4fSfnO03",
+    250: "https://buy.stripe.com/8x2bJ21GO7cw3wE13GfnO04",
+    500: "https://buy.stripe.com/dRm9AU4T00O8gjqeUwfnO05",
   } as Record<number, string>,
-  custom: "https://donate.stripe.com/dRm00kgBI1Scd7e13GfnO06",
+  custom: "https://buy.stripe.com/dRm00kgBI1Scd7e13GfnO06",
   successUrl: "https://amplifyannarbor.com/donate/success",
   cancelUrl: "https://amplifyannarbor.com/donate",
 };

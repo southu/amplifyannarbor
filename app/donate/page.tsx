@@ -1,7 +1,15 @@
 import { Metadata } from "next";
 import { DonationForm } from "@/components/donate/DonationForm";
+import { STRIPE_LIVE_LINKS } from "@/lib/stripe-live-links";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Heart, Users, Utensils, CheckCircle } from "lucide-react";
+
+// Live-mode Stripe Payment Links (buy.stripe.com), rendered server-side so the
+// secure donation links are present in the /donate HTML for no-JS donors and
+// crawlers. These are public Payment Link URLs — never secret keys.
+const directDonateLinks: { amount: number; url: string }[] = [
+  10, 25, 50, 100, 250, 500,
+].map((amount) => ({ amount, url: STRIPE_LIVE_LINKS.byAmount[amount] }));
 
 export const metadata: Metadata = {
   title: "Donate",
@@ -63,6 +71,27 @@ export default function DonatePage() {
             {/* Donation Form */}
             <div>
               <DonationForm />
+
+              {/* Live secure donation links (Stripe Payment Links, live mode).
+                  Rendered server-side so the donate page always offers a working
+                  secure payment path, even without JavaScript. */}
+              <div className="mt-6 text-center">
+                <p className="text-sm text-[var(--color-text-muted)] mb-3">
+                  Or donate instantly with a secure Stripe link:
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {directDonateLinks.map(({ amount, url }) => (
+                    <a
+                      key={amount}
+                      href={url}
+                      rel="noopener"
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-card)] hover:text-white transition-all"
+                    >
+                      Donate ${amount}
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Impact Info */}

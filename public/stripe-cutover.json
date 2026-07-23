@@ -42,7 +42,7 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WJLA5oeiO5iDl90qqkmh",
       "live_product_id": "prod_UvzVmwQkJUPr9e",
-      "live_payment_link": "https://donate.stripe.com/6oUcN62KSaoIc3acMofnO00",
+      "live_payment_link": "https://buy.stripe.com/6oUcN62KSaoIc3acMofnO00",
       "status": "live",
       "price_mode": "live",
       "live_payment_link_id": "plink_1Tw9OnLA5oeiO5iDNrhxXXog"
@@ -57,7 +57,7 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WKLA5oeiO5iDRf7ZUupf",
       "live_product_id": "prod_UvzVQNZPFXzP6m",
-      "live_payment_link": "https://donate.stripe.com/fZu14o0CKaoIffmaEgfnO01",
+      "live_payment_link": "https://buy.stripe.com/fZu14o0CKaoIffmaEgfnO01",
       "status": "live",
       "price_mode": "live",
       "live_payment_link_id": "plink_1Tw9OoLA5oeiO5iDl4YPilXp"
@@ -72,7 +72,7 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WKLA5oeiO5iDeacCNoYu",
       "live_product_id": "prod_UvzV41HBQX8BFo",
-      "live_payment_link": "https://donate.stripe.com/7sYeVe4T068sebi27KfnO02",
+      "live_payment_link": "https://buy.stripe.com/7sYeVe4T068sebi27KfnO02",
       "status": "live",
       "price_mode": "live",
       "live_payment_link_id": "plink_1Tw9OoLA5oeiO5iDcjOIRLV4"
@@ -87,7 +87,7 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WLLA5oeiO5iDMQn9Sg5F",
       "live_product_id": "prod_UvzVGl7tz2Nvz4",
-      "live_payment_link": "https://donate.stripe.com/aFa5kE2KSgN67MU4fSfnO03",
+      "live_payment_link": "https://buy.stripe.com/aFa5kE2KSgN67MU4fSfnO03",
       "status": "live",
       "price_mode": "live",
       "live_payment_link_id": "plink_1Tw9OpLA5oeiO5iDVSw5xwS1"
@@ -102,7 +102,7 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WLLA5oeiO5iDd9xBRLlV",
       "live_product_id": "prod_UvzVzzdANtZK7j",
-      "live_payment_link": "https://donate.stripe.com/8x2bJ21GO7cw3wE13GfnO04",
+      "live_payment_link": "https://buy.stripe.com/8x2bJ21GO7cw3wE13GfnO04",
       "status": "live",
       "price_mode": "live",
       "live_payment_link_id": "plink_1Tw9OpLA5oeiO5iDQXHMAjSp"
@@ -117,7 +117,7 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw7WMLA5oeiO5iDqWd9SyMu",
       "live_product_id": "prod_UvzVpPH000x3C4",
-      "live_payment_link": "https://donate.stripe.com/dRm9AU4T00O8gjqeUwfnO05",
+      "live_payment_link": "https://buy.stripe.com/dRm9AU4T00O8gjqeUwfnO05",
       "status": "live",
       "price_mode": "live",
       "live_payment_link_id": "plink_1Tw9OqLA5oeiO5iD4MK1hTyL"
@@ -134,7 +134,7 @@
       "sandbox_price_id": null,
       "live_price_id": "price_1Tw9OqLA5oeiO5iDqeYZgL5h",
       "live_product_id": "prod_Uw1RrIyekcHNBI",
-      "live_payment_link": "https://donate.stripe.com/dRm00kgBI1Scd7e13GfnO06",
+      "live_payment_link": "https://buy.stripe.com/dRm00kgBI1Scd7e13GfnO06",
       "pricing_model": "dynamic_price_data",
       "status": "live",
       "price_mode": "live",

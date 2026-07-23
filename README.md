@@ -58,10 +58,10 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+# Stripe (see .env.example for placeholder values)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<your_stripe_publishable_key>
+STRIPE_SECRET_KEY=<your_stripe_secret_key>
+STRIPE_WEBHOOK_SECRET=<your_stripe_webhook_secret>
 
 # Shopify (optional)
 SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
@@ -72,7 +72,9 @@ NEXT_PUBLIC_SITE_URL=https://amplifyannarbor.com
 ```
 
 See [`.env.example`](.env.example) for a ready-to-copy template. Populate `.env.local`
-(and CI) with **Stripe test-mode keys only** (`pk_test_…`, `sk_test_…`, test `whsec_…`).
+(and CI) with **Stripe test-mode keys only** (test publishable/secret keys and a
+test webhook secret). **Live keys are never committed** — they live only in the
+Cloudflare Pages production secret store.
 
 ### Stripe keys & secrets
 

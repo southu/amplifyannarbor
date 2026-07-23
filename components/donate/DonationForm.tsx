@@ -106,7 +106,7 @@ export function DonationForm() {
         return;
       }
 
-      // Fallback: LIVE Stripe Payment Links (donate.stripe.com). Preset amounts
+      // Fallback: LIVE Stripe Payment Links (buy.stripe.com). Preset amounts
       // map 1:1; custom amount uses the adjustable live link (donor confirms
       // amount on Stripe Checkout — live mode, not sandbox).
       const refParts = [

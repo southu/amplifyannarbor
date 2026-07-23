@@ -42,8 +42,8 @@ const LIVE_PRICE_BY_AMOUNT: Record<number, string> = {
 // A live-mode server key: either a full secret key (sk_live_) or a restricted
 // key (rk_live_) scoped to Checkout Session creation. Both authenticate live
 // Stripe API calls; a restricted key is the safer credential an operator is
-// likely to provision, so accept it too. Test-mode keys (sk_test_/rk_test_)
-// and publishable keys (pk_*) are intentionally rejected.
+// likely to provision, so accept it too. Test-mode server keys and any
+// publishable key are intentionally rejected (only live prefixes pass).
 function isLiveSecret(key: string | undefined): key is string {
   return (
     typeof key === "string" &&
