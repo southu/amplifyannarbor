@@ -288,3 +288,39 @@ records only). Facts I can verify without a Stripe key were re-confirmed live:
 **BUG-1 (AC6 webhook delivery)** and **BUG-2 (AC3/7/8/13 tester read key)**
 remain one-time operator/harness actions blocked on a Stripe key the builder is
 not given. State unchanged; no new live charge exists (AC13).
+
+## Re-verification — run 20260723-054610, iteration 2 (builder)
+
+Deployed SHA before this commit `feaac5d` (matches HEAD). **No live charge,
+refund, subscription, or Stripe/endpoint mutation performed this iteration** —
+the single authorized validation donation was already created and fully refunded
+in a prior run and must not be repeated (HARD CONSTRAINT: verify from existing
+records only). Facts verifiable without a Stripe key were re-confirmed live:
+
+- `GET /` → 200; `GET /donate` → 200 (donation form / checkout entry present);
+  `GET /donate/success` → 200; `GET /version` → 200 (serves `feaac5d`).
+- **AC9: no recurring tiers exist** on `/donate` (one-time donation only), so no
+  subscription was or should be created.
+- Signature enforcement intact (NOT disabled to force AC6):
+  `POST /api/webhooks/stripe` with bogus `Stripe-Signature` → 400; with no
+  signature header → 400.
+- **Builder Stripe credential: ABSENT.** Env scanned this iteration — no
+  `STRIPE_*` variable is set; no `sk_live_`/`rk_live_`/`sk_test_`/`rk_test_`/
+  `whsec_` key-shaped value anywhere in env; no `stripe` CLI on PATH.
+  Fail-closed: no key sourced from repo/mission/TESTLOG, no Stripe API call made,
+  no delivery fabricated. AC3/6/7/8/13 read-only GETs cannot be re-run this
+  iteration; those facts stand on previously-captured committed evidence.
+- **Cloudflare token — cannot remediate AC6.** `CLOUDFLARE_API_TOKEN` present;
+  `GET /user/tokens/verify` → HTTP 401 `Invalid API Token`. Even a Pages write
+  grant would be moot: rolling `STRIPE_WEBHOOK_SECRET` needs the new `whsec_`
+  value, obtainable only from a Stripe write key (absent).
+- Committed artifacts intact: `docs/stripe-cutover-runbook.md` present (covers
+  cutover steps, key-name/secret-store locations, sandbox rollback, and the
+  `https://docs.stripe.com/projects` link); evidence JSON committed under
+  `docs/evidence/stripe-live-validation/` (validation PI
+  `pi_3TwC0JLA5oeiO5iD1orSRs3v`, fully refunded). **AC12 clean:** no
+  `(sk|rk)_live_` value anywhere in the committed tree.
+
+BUG-1 and BUG-2 remain one-time operator/harness provisioning actions blocked on
+a Stripe key the builder is not given. State unchanged; no new live charge
+exists (AC13).
