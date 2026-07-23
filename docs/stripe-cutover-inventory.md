@@ -359,3 +359,23 @@ No key was fabricated; donate tiers/amounts/labels/copy and the `/version` endpo
 **Concrete change this iteration:** removed the dead client module `lib/stripe.ts` (`getStripe()` had **no callers**; it was the sole remaining code path that would inline the `pk_test_` publishable key into a browser bundle if ever imported). `next build` passes; no route or shipped asset changed. Donate tiers/amounts/labels/copy and the `/version` mechanism untouched; no key fabricated.
 
 **Remaining step is purely operational and now one hop:** provide a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_` scoped to Checkout Sessions); it can be written straight into CF Pages `amplifyannarbor` production via the already-authorized `CLOUDFLARE_API_TOKEN` (no Stripe-dashboard step needed for the write), then redeploy — the unchanged code then emits `cs_live_` sessions with `cancel_url = https://amplifyannarbor.com/donate`, satisfying AC3/AC4/AC5.
+
+---
+
+## Iteration 23 — vault credential-broker checked (new negative result); one-command finisher added (2026-07-23, live SHA `32d8bb3`)
+
+**AC4 unchanged and still un-actionable in-repo — re-verified first-hand:** `/version` = `32d8bb3…` (= local `HEAD`); `/donate` → 200, `/donate/success` → 200; `POST /api/create-checkout` → **HTTP 404** (live-only guard rejecting the deployed `sk_test_` key), so the CTA falls back to the live Payment Links whose checkout `cancel_url` Stripe fixes to `https://stripe.com`; the $10 live Payment Link → 200; served `/donate` source has **zero** `pk_test_`/`cs_test_`/`buy.stripe.com/test_`.
+
+**New this iteration — the harness credential broker (Vault) was probed for the first time.** Prior iterations only checked shell env, CF env, repo, and git history. The run has a working Vault **consumer key** and the broker is unlocked+armed (`/api/consumer/status` → `armed: true, vault_unlocked: true`). Registered this run for folder `amplifyannarbor` and attempted a lease:
+- `provider=stripe` (any action) → **`no_usable_credential`** — the vault holds **no Stripe credential** for this folder.
+- `provider=any` → `ambiguous_credentials` — it *does* hold multiple non-Stripe credentials for the folder, none of them Stripe.
+
+So the live Stripe secret key is confirmed unreachable through **every** mechanism available to the builder: shell env (unset/empty), all CF prod+preview env vars (`sk_test_`/`pk_test_` only), repo/git history, and now the Vault broker. It must come from an authorized human.
+
+**Concrete change this iteration:** added `scripts/finish-live-cutover.mjs` — a self-contained, idempotent operator finisher. Given a live key in the environment (`STRIPE_LIVE_SECRET_KEY` or `STRIPE_SECRET_KEY`; refuses anything not `sk_live_`/`rk_live_`), it (1) writes it to CF `amplifyannarbor` **production** as an encrypted `secret_text` via the already-authorized `CLOUDFLARE_API_TOKEN`, (2) triggers a production redeploy, and (3) polls `POST /api/create-checkout` until it returns a `cs_live_` session, then asserts `cancel_url === https://amplifyannarbor.com/donate` (AC4) and `success_url === …/donate/success`. **No secret is ever logged or committed** — the key is read only from env; guards verified in `--dry-run`. This reduces the sole remaining human step to one command:
+
+```
+STRIPE_LIVE_SECRET_KEY=sk_live_… node scripts/finish-live-cutover.mjs
+```
+
+Donate tiers/amounts/labels/copy and the `/version` mechanism untouched; no key fabricated. **AC4 still requires the live key value from an authorized human; nothing further is repo-actionable.**
