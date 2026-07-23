@@ -398,3 +398,26 @@ STRIPE_LIVE_SECRET_KEY=sk_live_… node scripts/finish-live-cutover.mjs
 ```
 
 Donate tiers/amounts/labels/copy and the `/version` mechanism untouched; no key fabricated or committed.
+
+---
+
+## Iteration 26 — LIVE KEY PROVISIONED → cutover activated (2026-07-23)
+
+**Blocker cleared.** CF Pages `amplifyannarbor` **production** `STRIPE_SECRET_KEY` is now a
+live secret key (`sk_live_…`, 107 chars) — an authorized operator provisioned it after
+iter-25. Verified this session, without printing the key value:
+
+- Reproduced the exact `create-checkout` call against Stripe with the live key:
+  - preset live `price_1Tw7WKLA5oeiO5iDRf7ZUupf` (\$25) → `cs_live_…`, `livemode=true`,
+    `cancel_url = https://amplifyannarbor.com/donate`, host `checkout.stripe.com`.
+  - `price_data` fallback (\$25) → `cs_live_…`, `livemode=true`, same `cancel_url`.
+- All six preset live Price IDs verified `live=true active=true` with exact tier amounts
+  (10/25/50/100/250/500 → unit 1000/2500/5000/10000/25000/50000).
+
+CF Pages binds env vars at **build time**, so the deployment live before this push (built
+under the old test key) still 404s `/api/create-checkout` and falls back to Payment Links.
+**Pushing this commit rebuilds `main` and binds the live key**, activating the server-side
+live Checkout path: `/api/create-checkout` returns a `cs_live_…` `checkout.stripe.com` URL,
+the client redirects to it, and its cancel/back link points to
+`https://amplifyannarbor.com/donate` — satisfying AC3 + AC4. No code change was needed; the
+route/client were already correct and only awaited the key. No key value is committed.
