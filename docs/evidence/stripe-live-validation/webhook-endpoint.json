@@ -1,0 +1,15 @@
+{
+  "api_version": null,
+  "application": null,
+  "created": 1784772906,
+  "description": "amplifyannarbor production checkout webhook",
+  "enabled_events": [
+    "checkout.session.completed"
+  ],
+  "id": "we_1TwCAALA5oeiO5iDBwdOFWMt",
+  "livemode": true,
+  "metadata": {},
+  "object": "webhook_endpoint",
+  "status": "enabled",
+  "url": "https://amplifyannarbor.com/api/webhooks/stripe"
+}

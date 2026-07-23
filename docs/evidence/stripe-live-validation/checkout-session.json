@@ -1,0 +1,115 @@
+{
+  "adaptive_pricing": {
+    "enabled": true
+  },
+  "after_expiration": null,
+  "allow_promotion_codes": null,
+  "amount_subtotal": 5000,
+  "amount_total": 5000,
+  "automatic_tax": {
+    "enabled": false,
+    "liability": null,
+    "provider": null,
+    "status": null
+  },
+  "billing_address_collection": null,
+  "branding_settings": {
+    "background_color": "#ffffff",
+    "border_style": "rounded",
+    "button_color": "#0074d4",
+    "display_name": "Amplify Ann Arbor",
+    "font_family": "default",
+    "icon": null,
+    "logo": null
+  },
+  "cancel_url": "https://amplifyannarbor.com/donate",
+  "client_reference_id": "[REDACTED]",
+  "client_secret": "[REDACTED]",
+  "collected_information": {
+    "business_name": null,
+    "individual_name": null,
+    "shipping_details": null
+  },
+  "consent": null,
+  "consent_collection": null,
+  "created": 1784772270,
+  "currency": "usd",
+  "currency_conversion": null,
+  "custom_fields": [],
+  "custom_text": {
+    "after_submit": null,
+    "shipping_address": null,
+    "submit": null,
+    "terms_of_service_acceptance": null
+  },
+  "customer": null,
+  "customer_account": null,
+  "customer_creation": "if_required",
+  "customer_details": "[REDACTED]",
+  "customer_email": "[REDACTED]",
+  "discounts": [],
+  "expires_at": 1784858670,
+  "id": "cs_live_a1iBSmzDg1DBxVR7FW6Y8TlGzSTxjzv5zjzzPTnJYWFrhR8zv8aE2ZdEoc",
+  "integration_identifier": null,
+  "invoice": null,
+  "invoice_creation": {
+    "enabled": false,
+    "invoice_data": {
+      "account_tax_ids": null,
+      "custom_fields": null,
+      "description": null,
+      "footer": null,
+      "issuer": null,
+      "metadata": {},
+      "rendering_options": null
+    }
+  },
+  "livemode": true,
+  "locale": null,
+  "managed_payments": {
+    "enabled": false
+  },
+  "metadata": {},
+  "mode": "payment",
+  "object": "checkout.session",
+  "origin_context": null,
+  "payment_intent": "pi_3TwC0JLA5oeiO5iD1orSRs3v",
+  "payment_link": null,
+  "payment_method_collection": "if_required",
+  "payment_method_configuration_details": {
+    "id": "pmc_1SpYSALA5oeiO5iDa6u6knPc",
+    "parent": null
+  },
+  "payment_method_options": {},
+  "payment_method_types": [
+    "card",
+    "klarna",
+    "link",
+    "cashapp",
+    "amazon_pay",
+    "crypto"
+  ],
+  "payment_status": "paid",
+  "permissions": null,
+  "phone_number_collection": {
+    "enabled": false
+  },
+  "recovered_from": null,
+  "saved_payment_method_options": null,
+  "setup_intent": null,
+  "shipping_address_collection": null,
+  "shipping_cost": null,
+  "shipping_options": [],
+  "status": "complete",
+  "submit_type": "donate",
+  "subscription": null,
+  "success_url": "https://amplifyannarbor.com/donate/success",
+  "total_details": {
+    "amount_discount": 0,
+    "amount_shipping": 0,
+    "amount_tax": 0
+  },
+  "ui_mode": "hosted",
+  "url": null,
+  "wallet_options": null
+}
