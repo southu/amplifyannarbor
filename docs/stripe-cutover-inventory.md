@@ -347,3 +347,15 @@ No key was fabricated; donate tiers/amounts/labels/copy and the `/version` endpo
 - **Builder shell** `STRIPE_SECRET_KEY` is **present but empty** (length 0); CF token present but Stripe never exposes secret/restricted key values via API, so no live key is reachable here.
 
 No key was fabricated; donate tiers/amounts/labels/copy and the `/version` endpoint were untouched. **AC4 remains blocked solely on one human ops step:** set a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_`) in the Cloudflare Pages `amplifyannarbor` **production** environment and redeploy. Do not re-run the exhausted live-key hunt (iters 17–20); only re-verify and record.
+
+---
+
+## Iteration 22 — blocker re-confirmed via direct CF-prod read; removed last dead pk_test client module (2026-07-23)
+
+**AC4 unchanged and still un-actionable in-repo** — re-verified first-hand:
+- **Live prod:** `/donate` → 200, `/donate/success` → 200, `/` → 200 (nav still links `/donate`), `/version` → 200 (= local `HEAD`); `POST /api/create-checkout` → **HTTP 404** (live-only guard rejecting the deployed test key). All seven live `donate.stripe.com` Payment Links → 200. Served `/donate` source has **zero** `pk_test_`/`cs_test_`/`buy.stripe.com/test_` (AC2/AC6 ✅); spot-crawl of `/`, `/events`, `/about`, `/donate/success` all clean.
+- **Cloudflare API read** of Pages project `amplifyannarbor` **production** env: `STRIPE_SECRET_KEY = sk_test_…`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_test_…` (both `plain_text`); no `sk_live_`/`rk_live_` present. Token holds read **and write** to this store, so a live key can be injected via the CF API the instant it is provided — the only missing input is the live key **value**. Gmail/Drive MCP still permission-gated (headless).
+
+**Concrete change this iteration:** removed the dead client module `lib/stripe.ts` (`getStripe()` had **no callers**; it was the sole remaining code path that would inline the `pk_test_` publishable key into a browser bundle if ever imported). `next build` passes; no route or shipped asset changed. Donate tiers/amounts/labels/copy and the `/version` mechanism untouched; no key fabricated.
+
+**Remaining step is purely operational and now one hop:** provide a live `STRIPE_SECRET_KEY` (`sk_live_` or `rk_live_` scoped to Checkout Sessions); it can be written straight into CF Pages `amplifyannarbor` production via the already-authorized `CLOUDFLARE_API_TOKEN` (no Stripe-dashboard step needed for the write), then redeploy — the unchanged code then emits `cs_live_` sessions with `cancel_url = https://amplifyannarbor.com/donate`, satisfying AC3/AC4/AC5.
