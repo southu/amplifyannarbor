@@ -23,6 +23,33 @@ type DonationFormData = z.infer<typeof donationSchema>;
 
 const presetAmounts = [10, 25, 50, 100, 250, 500];
 
+/**
+ * Ask the server to create a live Stripe Checkout Session (with an explicit
+ * cancel_url back to /donate). Returns the checkout.stripe.com URL, or null if
+ * the endpoint is not live (404) or otherwise unavailable, in which case the
+ * caller falls back to the live Payment Links.
+ */
+async function createLiveCheckoutSession(payload: {
+  amount: number;
+  email: string;
+  name: string;
+  message?: string;
+  custom: boolean;
+}): Promise<string | null> {
+  try {
+    const res = await fetch("/api/create-checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    const data: { url?: string } = await res.json();
+    return data.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function DonationForm() {
   const [customAmount, setCustomAmount] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(50);
@@ -55,9 +82,6 @@ export function DonationForm() {
     setIsProcessing(true);
 
     try {
-      // Production donate uses LIVE Stripe Payment Links (donate.stripe.com).
-      // Preset amounts map 1:1; custom amount uses the adjustable live link
-      // (donor confirms amount on Stripe Checkout — live mode, not sandbox).
       const isPreset =
         !customAmount &&
         selectedAmount != null &&
@@ -66,6 +90,25 @@ export function DonationForm() {
         ? selectedAmount!
         : "custom";
 
+      // Preferred path: live server-side Stripe Checkout Session. This lets us
+      // set an explicit cancel_url back to /donate (Payment Links cannot). The
+      // endpoint only responds when a live secret key is configured; otherwise
+      // it 404s and we fall back to the live Payment Links below.
+      const liveSession = await createLiveCheckoutSession({
+        amount: data.amount,
+        email: data.email,
+        name: data.name,
+        message: data.message,
+        custom: !isPreset,
+      });
+      if (liveSession && liveSession.startsWith("https://checkout.stripe.com/")) {
+        window.location.href = liveSession;
+        return;
+      }
+
+      // Fallback: LIVE Stripe Payment Links (donate.stripe.com). Preset amounts
+      // map 1:1; custom amount uses the adjustable live link (donor confirms
+      // amount on Stripe Checkout — live mode, not sandbox).
       const refParts = [
         data.name?.trim(),
         data.message?.trim() ? `msg:${data.message.trim().slice(0, 80)}` : "",
