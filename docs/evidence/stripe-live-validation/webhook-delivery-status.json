@@ -36,5 +36,26 @@
     ],
     "operator_fix": "Roll we_X signing secret (or create a new endpoint), set Cloudflare Pages production STRIPE_WEBHOOK_SECRET to the new whsec, redeploy main, then resend evt_1TwC0NLA5oeiO5iDUmzugqyy.",
     "fail_closed": "Signature verification was NOT disabled and no delivery was fabricated."
+  },
+  "reverification_2026-07-23_iter3": {
+    "note": "Blocker re-confirmed with live GETs and probes this iteration; no live PaymentIntent, refund, or endpoint mutation performed.",
+    "event_pending_webhooks_now": 1,
+    "endpoints_in_account": 1,
+    "only_endpoint": "we_1TwCAALA5oeiO5iDBwdOFWMt (enabled, checkout.session.completed, https://amplifyannarbor.com/api/webhooks/stripe)",
+    "deployed_secret_probe": {
+      "method": "HMAC-SHA256 over '{t}.{payload}' using the FULL 'whsec_...' string as key, current timestamp, posted to /api/webhooks/stripe",
+      "result_http_status": 200,
+      "result_body": "{\"received\":true}",
+      "conclusion": "Deployed STRIPE_WEBHOOK_SECRET == the value in Cloudflare Pages production env; the app verifies correctly. It does NOT equal we_X's signing secret, so real endpoint deliveries fail (pending_webhooks stays 1)."
+    },
+    "verification_still_active": {
+      "GET /api/stripe/webhook-health": 200,
+      "POST /api/webhooks/stripe with bogus signature": 400
+    },
+    "cloudflare_write_recheck": {
+      "PATCH pages/projects/amplifyannarbor (no-op env value)": "HTTP 403, code 10000 Authentication error",
+      "conclusion": "Token remains read-only; env var STRIPE_WEBHOOK_SECRET cannot be updated from this run."
+    },
+    "why_unreconcilable_from_this_run": "Both writable directions are closed: (a) app-side secret C cannot be changed to match the endpoint (Cloudflare token read-only), and (b) the endpoint secret cannot be set/rolled/read to match C (Stripe exposes an endpoint secret only in the create response, never on retrieve/update). No endpoint with secret==C exists (we_X is the only endpoint and its secret != C), and Stripe does not allow creating an endpoint with a chosen secret. Requires operator with Cloudflare Pages Edit or Stripe Dashboard access."
   }
 }
