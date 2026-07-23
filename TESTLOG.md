@@ -160,3 +160,35 @@ charge, refund, balance transaction, checkout session, webhook event, webhook
 endpoint, delivery status). No live secret-key value (live secret / restricted /
 webhook-signing prefixes) appears in any committed file; donor PII (name, email,
 address, card last4) is redacted.
+
+## Re-verification — run 20260723-050307, iteration 3 (builder)
+
+Deployed SHA before this commit `c5a8db0` (matches HEAD). No live charge,
+refund, subscription, or Stripe/endpoint mutation performed this iteration.
+Non-Stripe-dependent facts re-confirmed live:
+
+- `GET /` → 200; `GET /donate` → 200; `GET /version` → 200 (serves `c5a8db0`);
+  `GET /api/stripe/webhook-health` → 200 `{registered:true, url:…/api/webhooks/stripe,
+  events:[checkout.session.completed]}`.
+- Signature enforcement intact (NOT disabled to force AC6):
+  `POST /api/webhooks/stripe` with bogus `Stripe-Signature` → 400; with no
+  signature header → 400.
+- **Builder Stripe credential: ABSENT.** Env scanned this iteration — no
+  `STRIPE_*` variable of any kind (no secret, restricted/read, API, or webhook
+  secret; no `sk_live_`/`rk_live_`). Fail-closed: no key sourced from
+  repo/mission/TESTLOG, no Stripe API call made, no delivery fabricated. The
+  read-only Stripe GETs (AC3/6/7/8/13) cannot be re-run; `pending_webhooks==1`
+  is carried from previously-captured evidence, not re-fetched.
+- **Provisioning DISABLED** (`RATCHET_PROVISION_ENABLED=false`); no
+  builder-reachable path to a live Stripe key.
+- **Cloudflare token INVALID** — `CLOUDFLARE_API_TOKEN` present but
+  `GET /user/tokens/verify` → HTTP 401 (`code 1000 Invalid API Token`); cannot
+  read or set Cloudflare Pages `STRIPE_WEBHOOK_SECRET`.
+- Committed-tree secret scan: no `(sk|rk)_live_`/`whsec_` VALUES over HEAD
+  (AC12 clean).
+
+**BUG-1 (AC6)** and **BUG-2 (AC3/7/8/13 tester read key)** remain one-time
+operator/harness actions — see the delivery-status JSON
+(`reverification_2026-07-23_run050307_iter3`) and the operator remediation above.
+State unchanged: the single validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v`
+(fully refunded) and its committed evidence are untouched.
