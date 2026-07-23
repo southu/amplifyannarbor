@@ -103,4 +103,78 @@ $ grep -rl 'pk_test_\|sk_test_\|buy.stripe.com/test_\|sk_live_' .next/static
 
 ## Evidence 3 — Deployed production sweep
 
-_Captured against the deployed SHA after push; see the section appended below._
+Captured against deployed SHA **`a1e8578657f33286851d86a6c824bb52bd3b00e3`**
+(confirmed live at `GET https://amplifyannarbor.com/version`, HTTP 200, equal to
+the pushed `HEAD`).
+
+### /version
+
+```
+$ curl -s https://amplifyannarbor.com/version
+a1e8578657f33286851d86a6c824bb52bd3b00e3
+```
+
+### /donate page source (HTTP 200)
+
+```
+$ curl -s https://amplifyannarbor.com/donate | grep -c <string>
+pk_test_: 0
+sk_test_: 0
+buy.stripe.com/test_: 0
+sk_live_: 0
+```
+
+Live payment mechanism present in the page source (all `buy.stripe.com`, none
+contain `/test_`):
+
+```
+$ curl -s https://amplifyannarbor.com/donate | grep -oE 'https://buy\.stripe\.com/[A-Za-z0-9]+' | sort -u
+https://buy.stripe.com/6oUcN62KSaoIc3acMofnO00
+https://buy.stripe.com/7sYeVe4T068sebi27KfnO02
+https://buy.stripe.com/8x2bJ21GO7cw3wE13GfnO04
+https://buy.stripe.com/aFa5kE2KSgN67MU4fSfnO03
+https://buy.stripe.com/dRm9AU4T00O8gjqeUwfnO05
+https://buy.stripe.com/fZu14o0CKaoIffmaEgfnO01
+```
+
+Donation UI intact (heading + call-to-action):
+
+```
+$ curl -s https://amplifyannarbor.com/donate | grep -oE 'Support Our|Community|Select Donation Amount|Donate Now'
+Support Our
+Community
+Select Donation Amount
+Donate Now
+```
+
+### Referenced production JS bundles
+
+All 11 `/_next/static/**.js` bundles referenced by `/donate`, fetched from
+production, were grepped:
+
+```
+$ for b in $(curl -s https://amplifyannarbor.com/donate | grep -oE '/_next/static/[^"]+\.js' | sort -u); do
+    curl -s "https://amplifyannarbor.com$b" | grep -c 'pk_test_\|sk_test_\|buy.stripe.com/test_\|sk_live_'
+  done
+→ every bundle: 0  (ALL BUNDLES CLEAN)
+```
+
+### Home page (unchanged, HTTP 200)
+
+```
+$ curl -s https://amplifyannarbor.com/ -o /dev/null -w 'HTTP %{http_code}\n'
+HTTP 200
+# concert/event content intact: "Amplify", "Blind Pig", "Concert", "July 30", "Meals on Wheels"
+```
+
+### Result — acceptance criteria
+
+| AC | Check | Status |
+|----|-------|--------|
+| 1 | `/version` = pushed HEAD (`a1e8578…`), HTTP 200 | ✅ |
+| 2 | `/donate` source: no `pk_test_`/`sk_test_`/`buy.stripe.com/test_` | ✅ |
+| 3 | `/donate` source: live `buy.stripe.com` links (no `/test_`) | ✅ |
+| 4 | Every referenced JS bundle: no test-mode strings | ✅ |
+| 5 | No `sk_live_`/secret key in `/donate` source or bundles | ✅ |
+| 6 | Home page HTTP 200, concert content intact | ✅ |
+| 7 | `/donate` donation UI (heading + CTA) present | ✅ |
