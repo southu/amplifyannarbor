@@ -214,3 +214,37 @@ operator/harness actions — see the delivery-status JSON
 (`reverification_2026-07-23_run050307_iter3`) and the operator remediation above.
 State unchanged: the single validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v`
 (fully refunded) and its committed evidence are untouched.
+
+## Re-verification — run 20260723-052358, iteration 2 (builder)
+
+Deployed SHA before this commit `8804ac7` (matches HEAD). No live charge,
+refund, subscription, or Stripe/endpoint mutation performed this iteration.
+Non-Stripe-dependent facts re-confirmed live:
+
+- `GET /` → 200; `GET /donate` → 200 (donation form / checkout entry present);
+  `GET /donate/success` → 200; `GET /version` → 200 (serves `8804ac7`).
+- Signature enforcement intact (NOT disabled to force AC6):
+  `POST /api/webhooks/stripe` with bogus `Stripe-Signature` → 400; with no
+  signature header → 400.
+- **Builder Stripe credential: ABSENT.** Env scanned this iteration — no
+  `STRIPE_*` variable of any kind (named checks `STRIPE_SECRET_KEY`,
+  `STRIPE_LIVE_SECRET_KEY`, `STRIPE_RESTRICTED_READ_KEY`, `STRIPE_API_KEY`,
+  `STRIPE_WEBHOOK_SECRET` all UNSET; no `sk_live_`/`rk_live_`). Fail-closed: no
+  key sourced from repo/mission/TESTLOG, no Stripe API call made, no delivery
+  fabricated. AC3/6/7/8/13 read-only GETs cannot be re-run; `pending_webhooks==1`
+  is carried from previously-captured evidence, not re-fetched.
+- **Cloudflare token — mismatched scope, cannot fix AC6.** `CLOUDFLARE_API_TOKEN`
+  present (40 chars). `GET /user/tokens/verify` → HTTP 401 `code 1000 Invalid API
+  Token`, yet `GET accounts/{acct}/pages/projects/amplifyannarbor` → HTTP 200
+  `success=true` (a Pages **read** grant). Write is untested and **moot**: setting
+  `STRIPE_WEBHOOK_SECRET` needs the new `whsec_` value, obtainable only from a
+  Stripe **write** key (absent) — so even with Pages Edit the secret roll is
+  impossible from here.
+- Committed-tree secret scan: no `(sk|rk)_live_`/`whsec_` VALUES over HEAD
+  (AC12 clean).
+
+**BUG-1 (AC6)** and **BUG-2 (AC3/7/8/13 tester read key)** remain one-time
+operator/harness actions — see the delivery-status JSON
+(`reverification_2026-07-23_run052358_iter2`) and the operator remediation above.
+State unchanged: the single validation donation `pi_3TwC0JLA5oeiO5iD1orSRs3v`
+(fully refunded) and its committed evidence are untouched.
