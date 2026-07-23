@@ -628,3 +628,49 @@ earlier run; the one-charge hard constraint forbids any new charge).
 
 State unchanged; BUG-1 and BUG-2 remain one-time operator/harness provisioning
 actions; no new live charge exists (AC13).
+
+## Run 20260723-065304 — iteration 3 (builder re-verification, fail-closed)
+
+Re-checked this iteration; the operator blocker is unchanged. No live charge,
+refund, subscription, or Stripe/endpoint mutation performed. The one validation
+donation `pi_3TwC0JLA5oeiO5iD1orSRs3v` stays created-and-fully-refunded from the
+earlier run (charge `refunded=true`, refund `pyr_1TwCpqLA5oeiO5iDwP3f3IdN`
+`status=succeeded`, balance txn `net=4825` `status=pending`); the one-charge hard
+constraint forbids any new charge, so I verified from existing records only.
+
+- **Builder Stripe credential: ABSENT.** Zero `STRIPE_*` variables in env
+  (`env | grep -c '^STRIPE_' == 0`); zero `sk_live_`/`rk_live_`/`whsec_`/
+  `sk_test_`/`rk_test_` key-shaped value anywhere in env; no `stripe` CLI on
+  PATH. Fail-closed — no key sourced from repo/mission/TESTLOG.
+- **Operator secret store: LOCKED to builder.** Vault
+  (`VAULT_URL=http://127.0.0.1:8379`) `/health` 200 but `GET /api/items` → 401;
+  `POST /api/broker/fetch` → 404; broker injected 0 secrets
+  (`RATCHET_PROVISION_ENV_FROM_VAULT_COUNT=0`, `RATCHET_PROVISION_ENABLED=false`).
+- **Cloudflare token correction:** the token is in fact **VALID for the Pages
+  API** — `GET /accounts/<id>/pages/projects` returns the real `amplifyannarbor`
+  project config (production branch `main`, domains `amplifyannarbor.com`).
+  (The `/user/tokens/verify` self-endpoint returns code 1000 only because the
+  token lacks that self-read scope; earlier logs mislabeled the token as wholly
+  invalid.) This still does **not** unblock BUG-1: setting the Pages
+  `STRIPE_WEBHOOK_SECRET` requires the endpoint's `whsec_…` signing-secret value,
+  which only exists after an operator rolls/creates it in the Stripe Dashboard
+  (live write access the builder is not given). The builder cannot invent, read,
+  or guess that value, and sourcing one from anywhere would violate fail-closed;
+  so no CF Pages secret write was attempted.
+- **Live site healthy:** `GET /` `/donate` `/donate/success` `/version` all 200;
+  `/version` body `b9e4ce11ac65b60498375f2f4bcda8911b0b9b5e` == HEAD before this
+  commit. `/donate` carries the Stripe checkout/donate markers (AC2). **AC9:** no
+  recurring/subscription markers — one-time amounts only, no subscription.
+- **Signature verification intact:** `POST /api/webhooks/stripe` with no
+  signature → 400 and with a bogus signature → 400 (not disabled to force AC6).
+  Committed evidence still shows `evt_1TwC0NLA5oeiO5iDUmzugqyy`
+  `pending_webhooks=1`, endpoint `we_1TwCAALA5oeiO5iDBwdOFWMt` `status=enabled`,
+  redelivery `delivered_2xx=false reason=signature_secret_mismatch` (BUG-1).
+- **AC12 clean:** no full `(sk|rk)_live_`/`whsec_` key value anywhere in the
+  committed tree (only prefix references in code/docs and placeholder
+  `whsec_xxx` in `.env.example`).
+
+State unchanged; BUG-1 (AC6 webhook `signature_secret_mismatch`) and BUG-2
+(AC3/7/8/13 tester restricted read key) remain one-time operator/harness
+provisioning actions blocked on a Stripe credential the builder is not given; no
+new live charge exists (AC13).
