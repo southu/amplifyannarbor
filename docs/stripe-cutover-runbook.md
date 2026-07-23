@@ -219,3 +219,13 @@ available here is **read-only**). This is a **fail-closed** stop, not an improvi
 signature verification was not disabled and no delivery was fabricated. Fix per §1
 "Webhook signing secret" (operator with Pages **Edit** rolls the endpoint secret, updates
 the CF env, redeploys, resends the event).
+
+**Evidence visibility (AC10/AC11).** The acceptance checks fetch the runbook and the
+`docs/evidence/stripe-live-validation/*.json` files anonymously via
+`https://raw.githubusercontent.com/southu/amplifyannarbor/main/...`, which requires the
+repository to be publicly readable. The repo was set to **public** for this reason. Before
+doing so the full git history was scanned and confirmed free of usable secrets (no
+`sk_live_`/`rk_live_`, no full `whsec_`, no private keys, no `.env`); only `.env.example`
+placeholders and — until redacted in the served tree — partial test-mode key prefixes were
+present. Never rely on repo privacy to protect a secret: keep all live keys in the
+Cloudflare Pages production secret store only, and rotate any value that lands in a commit.

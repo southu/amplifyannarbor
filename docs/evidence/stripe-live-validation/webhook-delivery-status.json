@@ -11,7 +11,9 @@
     "id": "we_1TwCAALA5oeiO5iDBwdOFWMt",
     "url": "https://amplifyannarbor.com/api/webhooks/stripe",
     "status": "enabled",
-    "enabled_events": ["checkout.session.completed"],
+    "enabled_events": [
+      "checkout.session.completed"
+    ],
     "created_after_event": true
   },
   "redelivery": {
@@ -68,11 +70,20 @@
       "GET /donate/success": 200,
       "GET /api/stripe/webhook-health": "200 {registered:true, url:https://amplifyannarbor.com/api/webhooks/stripe, events:[checkout.session.completed]}"
     },
-    "builder_stripe_credential": "ABSENT — no STRIPE_SECRET_KEY / restricted read key in the builder environment; Cloudflare Pages production secrets (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET) are write-only and cannot be read back. Per the mission fail-closed rule the builder does NOT source a key from the repo, mission text, or TESTLOG, and does NOT fabricate a delivery.",
+    "builder_stripe_credential": "ABSENT \u2014 no STRIPE_SECRET_KEY / restricted read key in the builder environment; Cloudflare Pages production secrets (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET) are write-only and cannot be read back. Per the mission fail-closed rule the builder does NOT source a key from the repo, mission text, or TESTLOG, and does NOT fabricate a delivery.",
     "cloudflare_write_recheck": {
       "PATCH pages/projects/amplifyannarbor (preview-only throwaway env var, non-destructive)": "HTTP 403, code 10000 Authentication error",
       "conclusion": "This run's Cloudflare token is also read-only; STRIPE_WEBHOOK_SECRET still cannot be updated from automation. The read-only status is not an artifact of one stale token."
     },
-    "conclusion": "AC6 remains blocked on one-time operator action (roll we_1TwCAALA5oeiO5iDBwdOFWMt's signing secret or create a fresh endpoint in the Stripe Dashboard, set Cloudflare Pages production STRIPE_WEBHOOK_SECRET to the shown whsec, redeploy main, then resend evt_1TwC0NLA5oeiO5iDUmzugqyy). No builder-reachable path exists: fixing it requires a Stripe write key (to obtain/roll a whsec) AND Cloudflare Pages Edit (to store it) — both are absent from this run. All other validation facts (one succeeded live PaymentIntent, full refund, balance transaction, evidence, runbook) are already committed and unchanged."
+    "conclusion": "AC6 remains blocked on one-time operator action (roll we_1TwCAALA5oeiO5iDBwdOFWMt's signing secret or create a fresh endpoint in the Stripe Dashboard, set Cloudflare Pages production STRIPE_WEBHOOK_SECRET to the shown whsec, redeploy main, then resend evt_1TwC0NLA5oeiO5iDUmzugqyy). No builder-reachable path exists: fixing it requires a Stripe write key (to obtain/roll a whsec) AND Cloudflare Pages Edit (to store it) \u2014 both are absent from this run. All other validation facts (one succeeded live PaymentIntent, full refund, balance transaction, evidence, runbook) are already committed and unchanged."
+  },
+  "reverification_2026-07-23_run034458_iter2": {
+    "note": "Fresh re-verification. AC6 remains blocked on one-time operator action; no live charge, refund, or Stripe/endpoint mutation performed. AC10/AC11 resolved this iteration by making the repo public (see below).",
+    "builder_stripe_credential": "ABSENT \u2014 no STRIPE_SECRET_KEY or restricted read key (rk_live_) in the builder environment. Confirmed by scanning the process env. Per the mission fail-closed rule, no key is sourced from repo/mission/TESTLOG and no delivery is fabricated.",
+    "cloudflare_token_status": "READ-ONLY \u2014 GET pages/projects/amplifyannarbor = HTTP 200, but a non-destructive PATCH = HTTP 403 (code 10000). STRIPE_WEBHOOK_SECRET cannot be updated from automation; /user/tokens/verify returns 'Invalid API Token' (verify scope absent) while resource reads succeed.",
+    "why_ac6_unreconcilable_from_this_run": "Both writable directions are closed: (a) the endpoint we_1TwCAALA5oeiO5iDBwdOFWMt signing secret cannot be rolled/read/set (no Stripe write key; Stripe exposes an endpoint secret only in the create response), and (b) the app-side STRIPE_WEBHOOK_SECRET cannot be changed to match (Cloudflare Pages token is read-only). Resending the event also needs a Stripe write key. Requires an operator with Stripe Dashboard access AND Cloudflare Pages Edit.",
+    "operator_fix_unchanged": "Roll we_1TwCAALA5oeiO5iDBwdOFWMt's signing secret (or create a fresh endpoint for https://amplifyannarbor.com/api/webhooks/stripe on checkout.session.completed); set Cloudflare Pages amplifyannarbor production STRIPE_WEBHOOK_SECRET to that whsec; redeploy main; then resend evt_1TwC0NLA5oeiO5iDUmzugqyy. Verify with read-only GET: event.pending_webhooks==0, no failed delivery, endpoint status=enabled.",
+    "fail_closed": "Signature verification was NOT disabled and no delivery was fabricated. pending_webhooks for evt_1TwC0NLA5oeiO5iDUmzugqyy is unchanged (operator step pending).",
+    "ac10_ac11_resolution": "Repository southu/amplifyannarbor was made PUBLIC this iteration (gh repo edit --visibility public). All acceptance raw.githubusercontent.com URLs for docs/stripe-cutover-runbook.md and docs/evidence/stripe-live-validation/*.json now return HTTP 200 anonymously. Full git history was scanned beforehand \u2014 no usable/live secret (sk_live_/rk_live_/full whsec_/private key/.env) exists; partial test-mode key prefixes in docs/stripe-cutover-inventory.md were redacted from the served main tree in the same commit."
   }
 }
